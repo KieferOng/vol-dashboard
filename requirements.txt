@@ -12,6 +12,7 @@ requests          # Hits the Massive API for live snapshots
 yfinance          # Pulls historical spot prices and Risk-Free Rates (^IRX)
 
 # --- Dashboard & Visualization ---
-streamlit         # The UI framework for your app.py
+streamlit>=1.30.0 # The UI framework for your app.py
+altair<5.0.0      
 plotly            # Recreates the high-fidelity "Options Insight" charts
 matplotlib        # For additional UI features
