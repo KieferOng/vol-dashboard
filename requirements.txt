@@ -1,0 +1,17 @@
+# --- Data Infrastructure & AWS ---
+boto3             # Required for S3 flatfile downloads
+python-dotenv     # Manages your .env file for S3 and Massive API keys
+
+# --- Core Math & Data Science ---
+pandas            # Primary data manipulation and CSV handling
+numpy             # Vectorized math operations for log-returns
+scipy             # Black-Scholes math (norm) and IV solver (brentq)
+
+# --- Financial Data APIs ---
+requests          # Hits the Massive API for live snapshots
+yfinance          # Pulls historical spot prices and Risk-Free Rates (^IRX)
+
+# --- Dashboard & Visualization ---
+streamlit         # The UI framework for your app.py
+plotly            # Recreates the high-fidelity "Options Insight" charts
+matplotlib        # For additional UI features
