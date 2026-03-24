@@ -273,32 +273,6 @@ def build_dashboard_view(view_df, tab_name, show_ribbon=True):
             if val == '✅': return 'color: #00E676; font-weight: bold;' 
             return ''
 
-        def style_iv_matrix(df):
-            styles = pd.DataFrame('', index=df.index, columns=df.columns)
-            base_hv = df['HV30'].fillna(df['HV10']) if 'HV30' in df.columns else df['HV10']
-            
-            for col in ['IV30', 'IV90']:
-                if col in df.columns:
-                    diff = df[col] - base_hv
-                    max_diff = diff.max()
-                    if pd.isna(max_diff) or max_diff <= 0: max_diff = 1 
-                    
-                    for i in df.index:
-                        val = diff.loc[i]
-                        if pd.isna(val): continue
-                        
-                        if val <= 0:
-                            styles.loc[i, col] = 'background-color: #006400; color: white;'
-                        else:
-                            ratio = val / max_diff
-                            if ratio > 0.66:
-                                styles.loc[i, col] = 'background-color: #8B0000; color: white;' 
-                            elif ratio > 0.33:
-                                styles.loc[i, col] = 'background-color: #B22222; color: white;' 
-                            else:
-                                styles.loc[i, col] = 'background-color: #FF5252; color: white;' 
-            return styles
-
         styler.format(format_dict, na_rep="N/A")
         
         perf_cols = ['1D PERF %', '1W PERF %', '1M PERF %', '3M PERF %', '1D σ MOVE', '1W σ MOVE']
@@ -307,7 +281,7 @@ def build_dashboard_view(view_df, tab_name, show_ribbon=True):
                 m = display_df[col].abs().quantile(0.85) or 1.0
                 styler.background_gradient(cmap='RdYlGn', subset=[col], vmin=-m, vmax=m)
 
-        vol_cols = ['1M 25D SKEW', '5D Δ SKEW', 'CARRY', 'HV10', 'HV30', 'IV %-ILE', 'SKEW %-ILE']
+        vol_cols = ['1M 25D SKEW', '5D Δ SKEW', 'CARRY', 'HV10', 'HV30', 'IV30', 'IV90', 'IV %-ILE', 'SKEW %-ILE']
         for col in vol_cols:
             if col in display_df.columns:
                 if col in ['CARRY', '5D Δ SKEW', '1M 25D SKEW']:
@@ -327,7 +301,6 @@ def build_dashboard_view(view_df, tab_name, show_ribbon=True):
             if pd.isna(m) or m == 0: m = 0.1
             styler.background_gradient(cmap='RdYlGn_r', subset=['T/S'], vmin=1.0 - m, vmax=1.0 + m)
 
-        styler.apply(style_iv_matrix, axis=None)
         styler.map(color_warnings, subset=['WARNINGS'])
         styler.map(color_divergence, subset=['DIVERGENCE?'])
 
