@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import os
 from live_engine_v2 import build_all_tickers
 
-st.set_page_config(page_title="NUSSIF VOL DASHBOARD", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Vol Dashboard", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
@@ -116,19 +116,25 @@ with st.sidebar:
 
     with st.expander("Heatmap Colour Key"):
         st.markdown("""
-        **Performance & Skew Columns**
-        * 🟢 **Green:** Positive / Bullish / Low Vol.
-        * 🔴 **Red:** Negative / Bearish / High Vol.
-        * *Scaled relative to the 90th percentile of the current column.*
+        **1. Performance & Direction (PERF %, σ MOVE)**
+        * 🟢 **Green:** Positive returns / Bullish upside moves.
+        * 🔴 **Red:** Negative returns / Bearish downside moves.
+        * *Symmetrically scaled around zero (capped at the 85th percentile).*
 
-        **IV30 / IV90**
-        * 🟢 **Green:** IV < HV (Options are 'cheap' relative to historical moves).
-        * 🔴 **Red:** IV > HV (Options are 'expensive' / High Volatility Risk Premium).
-        * *Darker shades indicate more extreme premiums.*
+        **2. Absolute Volatility (HV, IV, %-ILE)**
+        * 🟢 **Green:** Low absolute volatility or low historical rank.
+        * 🔴 **Red:** High absolute volatility or high historical rank.
+        * *Scaled from zero to the 90th percentile.*
 
-        **T/S (Term Structure)**
-        * 🟢 **Green:** Contango (IV30 < IV90). Normal market state.
-        * 🔴 **Red:** Inverted (IV30 > IV90). Signal of panic/crash.
+        **3. Relative Value & Skew (CARRY, 1M 25D SKEW, 5D Δ SKEW)**
+        * 🟢 **Green:** Cheap Puts / Low Volatility Risk Premium.
+        * 🔴 **Red:** Expensive Puts / High Volatility Risk Premium.
+        * *Dynamically scaled using independent top/bottom 5% cutoffs to highlight relative extremes, even if the whole market is skewed in one direction.*
+
+        **4. Term Structure (T/S)**
+        * 🟢 **Green:** Contango (< 1.0). Normal market state.
+        * 🔴 **Red:** Inverted (> 1.0). Signal of panic/crash.
+        * *Centered exactly at 1.0.*
         """)
 
     with st.expander("Chart Axis Guide"):
