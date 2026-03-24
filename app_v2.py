@@ -164,7 +164,7 @@ with st.sidebar:
     st.caption("⚠️ **DISCLAIMER:** Data is powered by Massive's **Real-time** Fair Market Value (FMV) feed. While calculated to be highly accurate, these prices are proprietary aggregates and may differ slightly from specific exchange quotes.")
 
 st.markdown("<h1 style='color:#00E676;'>NUSSIF <span style='color:white;'>VOL DASHBOARD</span></h1>", unsafe_allow_html=True)
-st.caption("👈 **Click the > icon in the top left to open the dashboard menu to refresh data and view metric definitions.**")
+st.caption("👈 **Click the >> icon in the top left to open the dashboard menu to refresh data and view metric definitions.**")
 st.divider()
 
 if df is None:
