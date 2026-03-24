@@ -119,22 +119,18 @@ with st.sidebar:
         **1. Performance & Direction (PERF %, σ MOVE)**
         * 🟢 **Green:** Positive returns / Bullish upside moves.
         * 🔴 **Red:** Negative returns / Bearish downside moves.
-        * *Symmetrically scaled around zero (capped at the 85th percentile).*
 
-        **2. Absolute Volatility (HV, IV, %-ILE)**
-        * 🟢 **Green:** Low absolute volatility or low historical rank.
-        * 🔴 **Red:** High absolute volatility or high historical rank.
-        * *Scaled from zero to the 90th percentile.*
+        **2. Volatility (HV, IV)**
+        * 🟢 **Green:** Low absolute historical/implied volatility.
+        * 🔴 **Red:** High absolute historical/implied volatility.
 
         **3. Relative Value & Skew (CARRY, 1M 25D SKEW, 5D Δ SKEW)**
         * 🟢 **Green:** Cheap Puts / Low Volatility Risk Premium.
         * 🔴 **Red:** Expensive Puts / High Volatility Risk Premium.
-        * *Dynamically scaled using independent top/bottom 5% cutoffs to highlight relative extremes, even if the whole market is skewed in one direction.*
 
         **4. Term Structure (T/S)**
         * 🟢 **Green:** Contango (< 1.0). Normal market state.
         * 🔴 **Red:** Inverted (> 1.0). Signal of panic/crash.
-        * *Centered exactly at 1.0.*
         """)
 
     with st.expander("Chart Axis Guide"):
