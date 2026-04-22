@@ -1,10 +1,10 @@
-name: Daily OPRA Flatfile Updater
+name: Daily Vol Dashboard Pipeline
 
 on:
   schedule:
     # Runs at 10:00 AM UTC (6:00 AM EST) every Tuesday through Saturday.
     - cron: '0 10 * * 2-6'
-  workflow_dispatch:
+  workflow_dispatch: # Allows you to manually trigger the workflow from GitHub
 
 permissions:
   contents: write
@@ -27,21 +27,43 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install boto3 pandas numpy yfinance scipy python-dotenv
+        pip install boto3 pandas numpy yfinance scipy python-dotenv requests plotly
 
-    - name: Run Daily ETL Updater
+    - name: Run Daily ETL Pipeline
       env:
         MASSIVE_S3_ID: ${{ secrets.MASSIVE_S3_ID }}
         MASSIVE_S3_KEY: ${{ secrets.MASSIVE_S3_KEY }}
         MASSIVE_S3_ENDPOINT: ${{ secrets.MASSIVE_S3_ENDPOINT }}
         MASSIVE_S3_BUCKET: ${{ secrets.MASSIVE_S3_BUCKET }}
-      run: python flatfiles_updater.py
+        MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+      run: |
+        echo "=== Step 1: Updating Macro Dashboard Feed ==="
+        python flatfiles_updater.py
+        
+        echo "=== Step 2: Appending 1Y Strategy History ==="
+        python flatfiles_updater_upgrade.py 
+        
+        echo "=== Step 3: Re-calculating PnL Backtests ==="
+        python build_pnl_summary_upgrade.py
+        
+        echo "=== Step 4: Scanning Live Spreads ==="
+        python build_spreads_upgrade.py
 
     - name: Commit and Push Updated CSVs
       run: |
         git config --global user.name 'GitHub Action Bot'
         git config --global user.email 'action@github.com'
-        git add massive_historical_options_data/*.csv
-        # Only commit if there are changes
-        git diff --quiet && git diff --staged --quiet || git commit -m "Automated OPRA data update: $(date +'%Y-%m-%d')"
+        
+        # Stage the Macro Dashboard feed
+        git add live_dashboard_feed_fast.csv
+        
+        # Stage the Strategy history files
+        git add massive_historical_1y_data/*.csv
+        
+        # Stage the newly generated Strategy data
+        git add pnl_backtest_results.csv
+        git add live_spread_execution.csv
+        
+        # Only commit if there are actually changes to avoid failing the run
+        git diff --quiet && git diff --staged --quiet || git commit -m "Automated Pipeline Update: $(date +'%Y-%m-%d')"
         git push
