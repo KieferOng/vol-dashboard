@@ -2,8 +2,8 @@ name: Daily Vol Dashboard Pipeline
 
 on:
   schedule:
-    # Runs at 10:00 AM UTC (6:00 AM EST) every Tuesday through Saturday.
-    - cron: '0 10 * * 2-6'
+    # Runs at 10:00 AM UTC (6:00 AM Eastern Time) every single day.
+    - cron: '0 10 * * *'
   workflow_dispatch: # Allows you to manually trigger the workflow from GitHub
 
 permissions:
@@ -58,6 +58,9 @@ jobs:
         
         # Stage the Macro Dashboard feed
         git add live_dashboard_feed_fast.csv
+        
+        # Stage the Macro Dashboard historical data
+        git add massive_historical_options_data/*.csv
         
         # Stage the Strategy history files
         git add massive_historical_1y_data/*.csv
