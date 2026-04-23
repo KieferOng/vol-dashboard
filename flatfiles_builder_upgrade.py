@@ -132,7 +132,6 @@ def run_flatfile_builder():
         daily_df = pd.concat(filtered_chunks, ignore_index=True)
         daily_df['dte'] = (daily_df['expiry'] - target_ts).dt.days
         
-        # Dual-Tenor Bucket Filter
         daily_df = daily_df[((daily_df['dte'] >= 15) & (daily_df['dte'] <= 45)) | ((daily_df['dte'] >= 75) & (daily_df['dte'] <= 105))]
 
         for ticker in ALL_TICKERS:
@@ -172,24 +171,20 @@ def run_flatfile_builder():
                 if f.empty: return None
                 return f.iloc[(f['delta'] - target_delta).abs().argmin()]['iv']
 
-            # 1-Month Raw IVs
             atm_iv_30 = get_closest_iv(v30_df, 0.50, 'call')
             put_iv_30 = get_closest_iv(v30_df, -0.25, 'put')
             call_iv_30 = get_closest_iv(v30_df, 0.25, 'call')
             
             if atm_iv_30 is None: continue
             
-            # 3-Month Raw IVs
             atm_iv_90 = get_closest_iv(v90_df, 0.50, 'call')
             put_iv_90 = get_closest_iv(v90_df, -0.25, 'put')
             call_iv_90 = get_closest_iv(v90_df, 0.25, 'call')
             
-            # 1M Ratio Skews
             p_c_ratio_30 = round(put_iv_30 / call_iv_30, 4) if (put_iv_30 and call_iv_30) else np.nan
             c_atm_ratio_30 = round(call_iv_30 / atm_iv_30, 4) if (call_iv_30 and atm_iv_30) else np.nan
             p_atm_ratio_30 = round(put_iv_30 / atm_iv_30, 4) if (put_iv_30 and atm_iv_30) else np.nan
 
-            # 3M Ratio Skews
             p_c_ratio_90 = round(put_iv_90 / call_iv_90, 4) if (put_iv_90 and call_iv_90) else np.nan
             c_atm_ratio_90 = round(call_iv_90 / atm_iv_90, 4) if (call_iv_90 and atm_iv_90) else np.nan
             p_atm_ratio_90 = round(put_iv_90 / atm_iv_90, 4) if (put_iv_90 and atm_iv_90) else np.nan

@@ -70,7 +70,6 @@ def run_daily_updater():
     session = boto3.Session(aws_access_key_id=S3_ID, aws_secret_access_key=S3_KEY)
     s3 = session.client('s3', endpoint_url=S3_ENDPOINT, config=Config(signature_version='s3v4'))
     
-    # Target Yesterday (T-1 Business Day)
     today = pd.Timestamp.today().normalize()
     target_date = today - pd.tseries.offsets.BDay(1)
     date_str = target_date.strftime('%Y-%m-%d')
@@ -121,7 +120,6 @@ def run_daily_updater():
     daily_df = pd.concat(filtered_chunks, ignore_index=True)
     daily_df['dte'] = (daily_df['expiry'] - target_date).dt.days
     
-    # Dual-Tenor Bucket Filter
     daily_df = daily_df[((daily_df['dte'] >= 15) & (daily_df['dte'] <= 45)) | ((daily_df['dte'] >= 75) & (daily_df['dte'] <= 105))].copy()
     daily_df = daily_df[daily_df['close'] > 0]
 
@@ -159,24 +157,20 @@ def run_daily_updater():
             if f.empty: return None
             return f.iloc[(f['delta'] - target_delta).abs().argmin()]['iv']
 
-        # 1-Month Metrics
         atm_iv_30 = get_closest_iv(v30_df, 0.50, 'call')
         put_iv_30 = get_closest_iv(v30_df, -0.25, 'put')
         call_iv_30 = get_closest_iv(v30_df, 0.25, 'call')
         
         if atm_iv_30 is None: continue
         
-        # 3-Month Metrics
         atm_iv_90 = get_closest_iv(v90_df, 0.50, 'call')
         put_iv_90 = get_closest_iv(v90_df, -0.25, 'put')
         call_iv_90 = get_closest_iv(v90_df, 0.25, 'call')
         
-        # 1M Ratio Skews
         p_c_ratio_30 = round(put_iv_30 / call_iv_30, 4) if (put_iv_30 and call_iv_30) else np.nan
         c_atm_ratio_30 = round(call_iv_30 / atm_iv_30, 4) if (call_iv_30 and atm_iv_30) else np.nan
         p_atm_ratio_30 = round(put_iv_30 / atm_iv_30, 4) if (put_iv_30 and atm_iv_30) else np.nan
 
-        # 3M Ratio Skews
         p_c_ratio_90 = round(put_iv_90 / call_iv_90, 4) if (put_iv_90 and call_iv_90) else np.nan
         c_atm_ratio_90 = round(call_iv_90 / atm_iv_90, 4) if (call_iv_90 and atm_iv_90) else np.nan
         p_atm_ratio_90 = round(put_iv_90 / atm_iv_90, 4) if (put_iv_90 and atm_iv_90) else np.nan

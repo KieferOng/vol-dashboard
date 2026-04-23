@@ -140,23 +140,19 @@ def run_multi_test():
                 idx = (f['Delta'] - target_delta).abs().argmin()
                 return f.iloc[idx]['IV']
 
-            # 1-Month Metrics
             atm_iv_30 = get_closest_iv(v30_df, 0.50, 'CALL')
             put_iv_30 = get_closest_iv(v30_df, -0.25, 'PUT')
             call_iv_30 = get_closest_iv(v30_df, 0.25, 'CALL')
             
-            # 3-Month Metrics
             atm_iv_90 = get_closest_iv(v90_df, 0.50, 'CALL')
             put_iv_90 = get_closest_iv(v90_df, -0.25, 'PUT')
             call_iv_90 = get_closest_iv(v90_df, 0.25, 'CALL')
 
             if atm_iv_30 is not None:
-                # 1M Ratios
                 p_c_ratio_30 = round(put_iv_30 / call_iv_30, 4) if (put_iv_30 and call_iv_30) else np.nan
                 c_atm_ratio_30 = round(call_iv_30 / atm_iv_30, 4) if (call_iv_30 and atm_iv_30) else np.nan
                 p_atm_ratio_30 = round(put_iv_30 / atm_iv_30, 4) if (put_iv_30 and atm_iv_30) else np.nan
 
-                # 3M Ratios
                 p_c_ratio_90 = round(put_iv_90 / call_iv_90, 4) if (put_iv_90 and call_iv_90) else np.nan
                 c_atm_ratio_90 = round(call_iv_90 / atm_iv_90, 4) if (call_iv_90 and atm_iv_90) else np.nan
                 p_atm_ratio_90 = round(put_iv_90 / atm_iv_90, 4) if (put_iv_90 and atm_iv_90) else np.nan

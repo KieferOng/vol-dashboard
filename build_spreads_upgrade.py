@@ -48,7 +48,6 @@ def get_global_rf_rate() -> float:
     except Exception: return 0.045
 
 def calculate_penalized_execution(bid, ask, mkt, is_buy):
-    """Slippage Model: Uses Bid/Ask if tight, falls back to a 5% spread assumption if quotes are broken."""
     if bid > 0 and ask > bid and ((ask - bid) / mkt) < 0.50:
         spread = ask - bid
         return (mkt + 0.25 * spread) if is_buy else (mkt - 0.25 * spread)
@@ -125,7 +124,6 @@ def process_spreads(ticker: str, spot: float, rfr: float) -> list:
         puts = group[group["Type"] == "PUT"].sort_values('Strike')
         calls = group[group["Type"] == "CALL"].sort_values('Strike')
         
-        # --- PUT SPREADS ---
         if not puts.empty and len(puts) >= 2:
             buy_idx = (puts['Delta'] - (-0.25)).abs().argmin()
             sell_idx = (puts['Delta'] - (-0.10)).abs().argmin()
@@ -142,7 +140,6 @@ def process_spreads(ticker: str, spot: float, rfr: float) -> list:
                         
                         if cost > 0.01: 
                             raw_payout = ((buy_leg['Strike'] - sell_leg['Strike']) - cost) / cost
-                            # Flagging and Capping Logic
                             flag = "⚠️ Micro-Premium" if (raw_payout > 40 or cost < 0.05) else "✅ Viable"
                             payout_ratio = min(raw_payout, 99.9)
                             
@@ -154,7 +151,6 @@ def process_spreads(ticker: str, spot: float, rfr: float) -> list:
                                 "Flag": flag
                             })
 
-        # --- CALL SPREADS ---
         if not calls.empty and len(calls) >= 2:
             buy_idx = (calls['Delta'] - 0.25).abs().argmin()
             sell_idx = (calls['Delta'] - 0.10).abs().argmin()
@@ -171,7 +167,6 @@ def process_spreads(ticker: str, spot: float, rfr: float) -> list:
                         
                         if cost > 0.01:
                             raw_payout = ((sell_leg['Strike'] - buy_leg['Strike']) - cost) / cost
-                            # Flagging and Capping Logic
                             flag = "⚠️ Micro-Premium" if (raw_payout > 40 or cost < 0.05) else "✅ Viable"
                             payout_ratio = min(raw_payout, 99.9)
                             

@@ -155,29 +155,6 @@ with st.sidebar:
             * 🟢 **Green:** Contango (< 1.0). Normal market state.
             * 🔴 **Red:** Backwardation (> 1.0). Signal of panic/crash.
             """)
-
-        with st.expander("Chart Axis Guide"):
-            st.markdown("""
-            **1. IV vs Skew Z-Score**
-            * **X:** 1M 25D Put-Call Skew Z-Score
-            * **Y:** Implied Vol Z-Score
-            
-            **2. Strategy Compass**
-            * **X:** 1-Week Sigma Move
-            * **Y:** Implied Vol Z-Score
-            
-            **3. Contango / Backwardation**
-            * **X:** Implied Vol Z-Score
-            * **Y:** Term Structure
-            
-            **4. Carry vs Realised Vol**
-            * **X:** 10-Day Realised Vol
-            * **Y:** Carry
-            
-            **5. Breakout / Reversal Risk**
-            * **X:** 1-Week Sigma Move
-            * **Y:** 5-Day Change in Skew
-            """)
             
     elif page_selection == "Options Dashboard":
         with st.expander("Charts Guide"):

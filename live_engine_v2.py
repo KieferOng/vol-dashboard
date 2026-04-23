@@ -28,7 +28,6 @@ ETF_UNIVERSE = {
 ALL_TICKERS = [ticker for sublist in ETF_UNIVERSE.values() for ticker in sublist]
 
 def get_global_rf_rate() -> float:
-    """Fetches the risk-free rate once to avoid 50 redundant calls."""
     try:
         return yf.Ticker("^IRX").history(period="1d")['Close'].iloc[-1] / 100.0
     except Exception:

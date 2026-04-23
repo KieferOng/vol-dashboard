@@ -53,7 +53,6 @@ def run_daily_test():
     session = boto3.Session(aws_access_key_id=S3_ID, aws_secret_access_key=S3_KEY)
     s3 = session.client('s3', endpoint_url=S3_ENDPOINT, config=Config(signature_version='s3v4'))
     
-    # Target Yesterday (T-1 Business Day) based strictly on US/Eastern time
     today = pd.Timestamp.now(tz='US/Eastern').normalize().tz_localize(None)
     target_date = today - pd.tseries.offsets.BDay(1)
     date_str = target_date.strftime('%Y-%m-%d')
@@ -136,12 +135,10 @@ def run_daily_test():
             idx = (f['delta'] - target_delta).abs().argmin()
             return f.iloc[idx]['iv']
 
-        # 1-Month Metrics
         atm_iv_30 = get_closest_iv(v30_df, 0.50, 'CALL')
         put_iv_30 = get_closest_iv(v30_df, -0.25, 'PUT')
         call_iv_30 = get_closest_iv(v30_df, 0.25, 'CALL')
         
-        # 3-Month Metrics
         atm_iv_90 = get_closest_iv(v90_df, 0.50, 'CALL')
         put_iv_90 = get_closest_iv(v90_df, -0.25, 'PUT')
         call_iv_90 = get_closest_iv(v90_df, 0.25, 'CALL')
