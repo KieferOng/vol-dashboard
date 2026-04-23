@@ -1,27 +1,23 @@
-name: Daily Vol Dashboard Pipeline
+name: Daily History & Backtest
 
 on:
   schedule:
-    - cron: '0 10 * * *'
+    # Runs at 12:00 UTC (8:00 AM EST) every day
+    - cron: '0 12 * * *'
   workflow_dispatch: 
 
 permissions:
   contents: write
 
 jobs:
-  update-data:
+  update-history:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true 
-
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
@@ -30,37 +26,28 @@ jobs:
         python -m pip install --upgrade pip
         pip install boto3 pandas numpy yfinance scipy python-dotenv requests plotly
 
-    - name: Run Daily ETL Pipeline
+    - name: Run Daily History & Backtests
       env:
         MASSIVE_S3_ID: ${{ secrets.MASSIVE_S3_ID }}
         MASSIVE_S3_KEY: ${{ secrets.MASSIVE_S3_KEY }}
         MASSIVE_S3_ENDPOINT: ${{ secrets.MASSIVE_S3_ENDPOINT }}
         MASSIVE_S3_BUCKET: ${{ secrets.MASSIVE_S3_BUCKET }}
-        MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
       run: |
-        echo "=== Step 1: Updating Macro Historical Data (AWS S3) ==="
+        echo "=== Step 1: Downloading Yesterday's OPRA Data ==="
         python flatfiles_updater.py
         
-        echo "=== Step 2: Appending 1Y Strategy History ==="
+        echo "=== Step 2: Appending 1Y History ==="
         python flatfiles_updater_upgrade.py 
         
         echo "=== Step 3: Re-calculating PnL Backtests ==="
         python build_pnl_summary_upgrade.py
-        
-        echo "=== Step 4: Scanning Pre-Market Spreads ==="
-        python build_spreads_upgrade.py
 
-    - name: Commit and Push Updated CSVs
+    - name: Commit Daily Updates
       run: |
         git config --global user.name 'GitHub Action Bot'
         git config --global user.email 'action@github.com'
-        
-        # Stage the history and backtest files
         git add massive_historical_options_data/*.csv
         git add massive_historical_1y_data/*.csv
         git add pnl_backtest_results.csv
-        git add live_spread_execution.csv
-        
-        # Only commit if there are actual changes
-        git diff --quiet && git diff --staged --quiet || git commit -m "Automated Pipeline Update: $(date +'%Y-%m-%d')"
+        git diff --quiet && git diff --staged --quiet || git commit -m "Daily History Update"
         git push

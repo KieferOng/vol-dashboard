@@ -4,6 +4,7 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
+from datetime import datetime
 from live_engine_v2 import build_all_tickers
 
 st.set_page_config(page_title="Options Vol Dashboard", layout="wide", initial_sidebar_state="expanded")
@@ -548,6 +549,10 @@ elif page_selection == "Options Dashboard":
     st.divider()
 
     st.markdown("#### SELECTED TOP SPREADS 25D/10D")
+    if os.path.exists("live_spread_execution.csv"):
+        mod_time = os.path.getmtime("live_spread_execution.csv")
+        last_updated = datetime.fromtimestamp(mod_time).strftime("%Y-%m-%d %H:%M:%S UTC")
+        st.info(f"**Note:** To prevent server issues, option spreads calculations are done every hour during market hours. \n\n**Data last compiled:** `{last_updated}`")
     spread_df = load_spreads()
     
     if not spread_df.empty:
