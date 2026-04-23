@@ -567,14 +567,14 @@ elif page_selection == "Options Dashboard":
         def format_spread_table(df_subset):
             df_subset = df_subset[(df_subset['Payout Ratio'] <= 40.0) & (df_subset['Payout Ratio'] >= 1.0)]
 
-            display_cols = ['Ticker', 'Expiration', 'Strike 1', 'Strike 2', 'S1 %spot', 'S2 %spot', 'Cost', 'Cost %spot', 'Payout Ratio']
+            display_cols = ['Ticker', 'Expiration', 'Strike 1', 'Strike 2', 'S1 %spot', 'S2 %spot', 'Cost', 'Cost % Spot', 'Payout Ratio']
             df_display = df_subset[display_cols].copy()
             df_display = df_display.sort_values(by="Payout Ratio", ascending=False)
             
             format_dict = {
                 'Strike 1': '{:.1f}', 'Strike 2': '{:.1f}',
                 'S1 %spot': '{:.1f}', 'S2 %spot': '{:.1f}', 
-                'Cost': '{:.2f}', 'Cost %spot': '{:.1f}', 'Payout Ratio': '{:.1f}'
+                'Cost': '{:.2f}', 'Cost % Spot': '{:.1f}', 'Payout Ratio': '{:.1f}'
             }
             return df_display.style.format(format_dict).background_gradient(subset=['Payout Ratio'], cmap='Blues', vmin=4.0, vmax=11.5).set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
 
