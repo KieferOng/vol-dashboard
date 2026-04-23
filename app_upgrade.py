@@ -186,7 +186,7 @@ with st.sidebar:
             * **Y:** 1M Call / Put Skew Percentile.
             * **Highlighted Zone:** Tickers above the 80th percentile in Skew, indicating historically expensive tail protection.
 
-            **2. Selected Top Spreads 25D 10D**
+            **2. Selected Top Spreads 25D/10D**
             * Scans the live options chain for 1-month debit spreads (Buy 25-delta, Sell 10-delta).
             * **Cost:** Estimated net debit assuming worst case execution at ~25% worse than the mid-price.
             * **Payout Ratio:** Maximum Potential Profit divided by Cost. Ratios are strictly filtered between 1.0x and 40.0x.
@@ -196,7 +196,7 @@ with st.sidebar:
             * **Cumulative PnL:** Total return assuming the strategy was executed daily and held to maturity.
             * **Sharpe Ratio:** Annualised risk-adjusted return. *Note: 10-day and 20-day Sharpes may appear artificially inflated or deflated due to low short-term variance.*
 
-            **4. Historical Percentiles: Skew / Volatility**
+            **4. Historical Percentiles: Skew / Vol**
             * **Top Chart:** Displays the raw 25d Put / 25d Call ratio.
             * **Bottom Chart:** Displays the raw 25d Call / ATM ratio.
             * Overlays 1-Month (solid lines) and 3-Month (dotted lines) tenors to visualise term structure shifts.
@@ -649,7 +649,7 @@ elif page_selection == "Options Dashboard":
 
     st.divider()
 
-    st.markdown("#### HISTORICAL PERCENTILE: SKEW / VOL")
+    st.markdown("#### HISTORICAL PERCENTILES: SKEW / VOL")
     
     sel_ticker = st.selectbox("🔎 Select Ticker for Historical Skew", sorted_tickers, index=default_spy_idx, key="history_ticker_select")
     
