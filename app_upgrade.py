@@ -188,11 +188,11 @@ with st.sidebar:
             * **Highlighted Zone:** Tickers above the 80th percentile in Skew, indicating historically expensive tail protection.
 
             **2. Selected Top Spreads 25D/10D**
-            * Scans the live options chain for 1-month debit spreads (Buy 25-delta, Sell 10-delta).
+            * Scans the live options chain every hour during market hours for ~1-month debit spreads (Buy 25-delta, Sell 10-delta).
             * **Cost:** Estimated net debit assuming worst case execution at ~25% worse than the mid-price.
-            * **Payout Ratio:** Maximum Potential Profit divided by Cost. Ratios are strictly filtered between 1.0x and 40.0x.
+            * **Payout Ratio:** Maximum Potential Profit divided by Cost. Ratios are filtered between 1.0x and 40.0x.
 
-            **3. Daily Short Vol PnL Summary**
+            **3. Summary of PnL for Daily Short Vol Strategies**
             * Simulates daily rolling of short option strategies.
             * **Cumulative PnL:** Total return assuming the strategy was executed daily and held to maturity.
             * **Sharpe Ratio:** Annualised risk-adjusted return. *Note: 10-day and 20-day Sharpes may appear artificially inflated or deflated due to low short-term variance.*
@@ -618,7 +618,6 @@ elif page_selection == "Options Dashboard":
             }
             return df_display.style.format(format_dict).background_gradient(subset=['Payout Ratio'], cmap='Blues', vmin=4.0, vmax=11.5).set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
 
-        # Stacked Layout: Put Spreads First
         st.markdown("**SELECTED TOP PUT SPREADS 25D/10D**")
         put_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'PUT']
         if put_display.empty:
@@ -626,9 +625,8 @@ elif page_selection == "Options Dashboard":
         else:
             st.dataframe(format_spread_table(put_display), hide_index=True, width='stretch')
         
-        st.write("") # Add a little breathing room between tables
+        st.write("")
         
-        # Stacked Layout: Call Spreads Second
         st.markdown("**SELECTED TOP CALL SPREADS 25D/10D**")
         call_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'CALL']
         if call_display.empty:
