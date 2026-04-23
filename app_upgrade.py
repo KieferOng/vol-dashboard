@@ -464,8 +464,7 @@ elif page_selection == "Options Dashboard":
 
     st.markdown("#### 1M CALL / PUT MONITOR")
     
-    # 1. New selector for highlighting a specific ticker
-    highlight_tkr = st.selectbox("🎯 Select Ticker to Highlight (Optional)", ["None"] + sorted_tickers, key="highlight_ticker_select")
+    highlight_tkr = st.selectbox("🔎 Select Ticker to Highlight", ["None"] + sorted_tickers, key="highlight_ticker_select")
     st.write("")
     
     scatter_data = []
@@ -496,7 +495,6 @@ elif page_selection == "Options Dashboard":
                 
                 base_color = ticker_colors.get(tkr, '#00E676')
 
-                # Determine sizing and opacity based on the highlight selection
                 is_highlighted = (tkr == highlight_tkr)
                 m_size = 16 if is_highlighted else 8
                 l_width = 2.5 if is_highlighted else 1
@@ -516,7 +514,6 @@ elif page_selection == "Options Dashboard":
     if scatter_data:
         plot_df = pd.DataFrame(scatter_data)
         
-        # Ensure the highlighted ticker is plotted last so it appears on top
         if highlight_tkr != "None":
             highlight_row = plot_df[plot_df['Ticker'] == highlight_tkr]
             other_rows = plot_df[plot_df['Ticker'] != highlight_tkr]
@@ -582,7 +579,6 @@ elif page_selection == "Options Dashboard":
 
     st.markdown("#### SELECTED TOP SPREADS 25D/10D")
     
-    # 2. Timezone updates for UTC and SGT
     if os.path.exists("live_spread_execution.csv"):
         import datetime
         mod_time = os.path.getmtime("live_spread_execution.csv")
@@ -648,7 +644,7 @@ elif page_selection == "Options Dashboard":
     if os.path.exists("pnl_backtest_results.csv"):
         pnl_df = pd.read_csv("pnl_backtest_results.csv")
         
-        pnl_ticker = st.selectbox("🔎 Select Ticker for PnL Summary", sorted_tickers, index=default_spy_idx, key="pnl_ticker_select")
+        pnl_ticker = st.selectbox("🔎 Select Ticker for Short Vol PnL Summary", sorted_tickers, index=default_spy_idx, key="pnl_ticker_select")
         
         selected_pnl = pnl_df[pnl_df['Ticker'] == pnl_ticker].drop(columns=['Ticker'])
         
