@@ -535,7 +535,7 @@ elif page_selection == "Options Dashboard":
                     line=dict(color='black', width=plot_df['Line_Width']),
                     opacity=plot_df['Opacity']
                 ),
-                textfont=dict(color=['black' if op == 1.0 else 'rgba(0,0,0,0)' for op in plot_df['Opacity']]) # Hides text for dimmed tickers
+                textfont=dict(color=['black' if op == 1.0 else 'rgba(0,0,0,0)' for op in plot_df['Opacity']])
             ))
             fig_c.update_layout(
                 title="1M CALL MONITOR", 
@@ -604,8 +604,6 @@ elif page_selection == "Options Dashboard":
         if spread_search_ticker != "All":
             filtered_spreads = filtered_spreads[filtered_spreads['Ticker'] == spread_search_ticker]
 
-        c3, c4 = st.columns(2)
-        
         def format_spread_table(df_subset):
             df_subset = df_subset[(df_subset['Payout Ratio'] <= 40.0) & (df_subset['Payout Ratio'] >= 1.0)]
 
@@ -620,20 +618,23 @@ elif page_selection == "Options Dashboard":
             }
             return df_display.style.format(format_dict).background_gradient(subset=['Payout Ratio'], cmap='Blues', vmin=4.0, vmax=11.5).set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
 
-        with c3:
-            st.markdown("**SELECTED TOP PUT SPREADS 25D/10D**")
-            put_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'PUT']
-            if put_display.empty:
-                st.info("No viable Put spreads found for this selection.")
-            else:
-                st.dataframe(format_spread_table(put_display), hide_index=True, width='stretch')
-        with c4:
-            st.markdown("**SELECTED TOP CALL SPREADS 25D/10D**")
-            call_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'CALL']
-            if call_display.empty:
-                st.info("No viable Call spreads found for this selection.")
-            else:
-                st.dataframe(format_spread_table(call_display), hide_index=True, width='stretch')
+        # Stacked Layout: Put Spreads First
+        st.markdown("**SELECTED TOP PUT SPREADS 25D/10D**")
+        put_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'PUT']
+        if put_display.empty:
+            st.info("No viable Put spreads found for this selection.")
+        else:
+            st.dataframe(format_spread_table(put_display), hide_index=True, width='stretch')
+        
+        st.write("") # Add a little breathing room between tables
+        
+        # Stacked Layout: Call Spreads Second
+        st.markdown("**SELECTED TOP CALL SPREADS 25D/10D**")
+        call_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'CALL']
+        if call_display.empty:
+            st.info("No viable Call spreads found for this selection.")
+        else:
+            st.dataframe(format_spread_table(call_display), hide_index=True, width='stretch')
     else:
         st.info("No data found. Click 'Click to Refresh Data' in the sidebar.")
 
