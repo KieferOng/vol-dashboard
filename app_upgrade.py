@@ -464,6 +464,10 @@ elif page_selection == "Options Dashboard":
 
     st.markdown("#### 1M CALL / PUT MONITOR")
     
+    # 1. New selector for highlighting a specific ticker
+    highlight_tkr = st.selectbox("🎯 Select Ticker to Highlight (Optional)", ["None"] + sorted_tickers, key="highlight_ticker_select")
+    st.write("")
+    
     scatter_data = []
     
     for tkr in sorted_tickers:
@@ -492,16 +496,32 @@ elif page_selection == "Options Dashboard":
                 
                 base_color = ticker_colors.get(tkr, '#00E676')
 
+                # Determine sizing and opacity based on the highlight selection
+                is_highlighted = (tkr == highlight_tkr)
+                m_size = 16 if is_highlighted else 8
+                l_width = 2.5 if is_highlighted else 1
+                opacity = 1.0 if (highlight_tkr == "None" or is_highlighted) else 0.2
+
                 scatter_data.append({
                     "Ticker": tkr, 
                     "Blended_X": blended_x_axis, 
                     "Put_Skew_Pct": put_skew_pct, 
                     "Call_Skew_Pct": call_skew_pct,
-                    "Base_Color": base_color
+                    "Base_Color": base_color,
+                    "Marker_Size": m_size,
+                    "Line_Width": l_width,
+                    "Opacity": opacity
                 })
             
     if scatter_data:
         plot_df = pd.DataFrame(scatter_data)
+        
+        # Ensure the highlighted ticker is plotted last so it appears on top
+        if highlight_tkr != "None":
+            highlight_row = plot_df[plot_df['Ticker'] == highlight_tkr]
+            other_rows = plot_df[plot_df['Ticker'] != highlight_tkr]
+            plot_df = pd.concat([other_rows, highlight_row])
+            
         c1, c2 = st.columns(2)
         
         with c1:
@@ -512,7 +532,13 @@ elif page_selection == "Options Dashboard":
             fig_c.add_trace(go.Scatter(
                 x=plot_df['Blended_X'], y=plot_df['Call_Skew_Pct'], text=plot_df['Ticker'], 
                 mode='markers+text', textposition="top center", 
-                marker=dict(color=plot_df['Base_Color'], size=9, line=dict(color='black', width=1))
+                marker=dict(
+                    color=plot_df['Base_Color'], 
+                    size=plot_df['Marker_Size'], 
+                    line=dict(color='black', width=plot_df['Line_Width']),
+                    opacity=plot_df['Opacity']
+                ),
+                textfont=dict(color=['black' if op == 1.0 else 'rgba(0,0,0,0)' for op in plot_df['Opacity']]) # Hides text for dimmed tickers
             ))
             fig_c.update_layout(
                 title="1M CALL MONITOR", 
@@ -532,7 +558,13 @@ elif page_selection == "Options Dashboard":
             fig_p.add_trace(go.Scatter(
                 x=plot_df['Blended_X'], y=plot_df['Put_Skew_Pct'], text=plot_df['Ticker'], 
                 mode='markers+text', textposition="top center", 
-                marker=dict(color=plot_df['Base_Color'], size=9, line=dict(color='black', width=1))
+                marker=dict(
+                    color=plot_df['Base_Color'], 
+                    size=plot_df['Marker_Size'], 
+                    line=dict(color='black', width=plot_df['Line_Width']),
+                    opacity=plot_df['Opacity']
+                ),
+                textfont=dict(color=['black' if op == 1.0 else 'rgba(0,0,0,0)' for op in plot_df['Opacity']])
             ))
             fig_p.update_layout(
                 title="1M PUT MONITOR", 
@@ -549,10 +581,19 @@ elif page_selection == "Options Dashboard":
     st.divider()
 
     st.markdown("#### SELECTED TOP SPREADS 25D/10D")
+    
+    # 2. Timezone updates for UTC and SGT
     if os.path.exists("live_spread_execution.csv"):
+        import datetime
         mod_time = os.path.getmtime("live_spread_execution.csv")
-        last_updated = datetime.fromtimestamp(mod_time).strftime("%Y-%m-%d %H:%M:%S UTC")
-        st.info(f"**Note:** To prevent server issues, option spreads calculations are done every hour during market hours. \n\n**Data last compiled:** `{last_updated}`")
+        utc_dt = datetime.datetime.utcfromtimestamp(mod_time)
+        sgt_dt = utc_dt + datetime.timedelta(hours=8)
+        
+        last_updated_utc = utc_dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+        last_updated_sgt = sgt_dt.strftime("%Y-%m-%d %H:%M:%S SGT")
+        
+        st.info(f"**Note:** To prevent server issues, option spreads calculations are done every hour during market hours. \n\n**Data last compiled:** `{last_updated_utc}` | `{last_updated_sgt}`")
+        
     spread_df = load_spreads()
     
     if not spread_df.empty:
