@@ -464,7 +464,7 @@ elif page_selection == "Options Dashboard":
 
     st.markdown("#### 1M CALL / PUT MONITOR")
     
-    highlight_tkr = st.selectbox("🔎 Select Ticker to Highlight", ["None"] + sorted_tickers, key="highlight_ticker_select")
+    highlight_tkr = st.selectbox("🔎 Search & Highlight Ticker in Call / Put Monitor", ["None"] + sorted_tickers, key="highlight_ticker_select")
     st.write("")
     
     scatter_data = []
