@@ -639,12 +639,12 @@ elif page_selection == "Options Dashboard":
 
     st.divider()
 
-    st.markdown("#### DAILY SHORT VOL PNL SUMMARY")
+    st.markdown("#### SUMMARY OF PNL FOR DAILY SHORT VOL STRATEGIES")
     
     if os.path.exists("pnl_backtest_results.csv"):
         pnl_df = pd.read_csv("pnl_backtest_results.csv")
         
-        pnl_ticker = st.selectbox("🔎 Select Ticker for Short Vol PnL Summary", sorted_tickers, index=default_spy_idx, key="pnl_ticker_select")
+        pnl_ticker = st.selectbox("🔎 Select Ticker for PnL Summary", sorted_tickers, index=default_spy_idx, key="pnl_ticker_select")
         
         selected_pnl = pnl_df[pnl_df['Ticker'] == pnl_ticker].drop(columns=['Ticker'])
         
