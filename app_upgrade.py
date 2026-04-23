@@ -4,13 +4,10 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
-
-# Import from your existing, untouched live_engine_v2
 from live_engine_v2 import build_all_tickers
 
-st.set_page_config(page_title="Vol Dashboard", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Options Vol Dashboard", layout="wide", initial_sidebar_state="expanded")
 
-# --- ORIGINAL V2 CSS ---
 st.markdown("""
     <style>
     .stApp {background-color: #04040A; color: white;}
@@ -38,7 +35,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- ORIGINAL V2 UNIVERSES ---
 MACRO_UNIVERSE = {
     "INDICES": ["SPY", "QQQ", "DIA", "IWM", "EFA", "VGK", "INDA", "FXI", "EWJ", "EWY", "EWZ", "EEM", "EWW"],
     "BONDS": ["IEF", "TLT", "LQD", "HYG"],
@@ -54,7 +50,6 @@ SECTOR_UNIVERSE = {
 MACRO_TICKERS = [t for sub in MACRO_UNIVERSE.values() for t in sub]
 SECTOR_TICKERS = [t for sub in SECTOR_UNIVERSE.values() for t in sub]
 
-# --- DATA LOADERS ---
 @st.cache_data(ttl=300)
 def load_data():
     if not os.path.exists("live_dashboard_feed_fast.csv"): 
@@ -110,11 +105,10 @@ def refresh_data():
 
 df = load_data()
 
-# --- SIDEBAR & NAVIGATION ---
 with st.sidebar:
     st.header("Dashboard Menu")
     
-    page_selection = st.radio("Select View:", ["Macro Vol Dashboard", "Strategy & Execution"])
+    page_selection = st.radio("Select View:", ["Vol Dashboard", "Options Dashboard"])
     st.divider()
     
     if st.button("Click to Refresh Data"):
@@ -122,49 +116,49 @@ with st.sidebar:
     st.divider()
 
     # Dynamic Sidebar Context based on Page Selection
-    if page_selection == "Macro Vol Dashboard":
+    if page_selection == "Vol Dashboard":
         with st.expander("Volatility Metrics"):
             st.markdown("""
             **Performance & Sigma**
             * **SPOT:** Current market price.
-            * **1D/1W/1M/3M %:** Price returns over specific windows.
-            * **σ MOVE:** Performance divided by historical std dev (22 days of rolling daily/weekly returns). Measures how 'extreme' the move is.
+            * **1D/1W/1M/3M %:** Price returns over specific time periods.
+            * **σ MOVE:** Performance divided by historical std dev (22 days of rolling daily/weekly returns).
             
             **Volatility**
             * **HV10 / HV30:** 10 and 30-day Realised Volatility.
             * **IV30 / IV90:** 30 and 90-day Implied Volatility.
-            * **T/S (Term Structure):** Ratio of IV30 to IV90. <1.0 is Contango, >1.0 is Inverted.
+            * **T/S (Term Structure):** Ratio of IV30 to IV90. <1.0 is Contango, >1.0 is Backwardation.
             * **IV %-ILE:** Current IV30 rank relative to its 22-day history.
             
             **Skew & Strategy**
-            * **1M 25D SKEW:** Relative cost of 25-delta puts vs calls. Positive means puts are more expensive.
+            * **1M 25D SKEW:** IV of 1-month 25-delta puts - IV of 1-month 25-delta calls. Positive means puts are more expensive.
             * **CARRY:** Volatility Risk Premium (IV30 - HV10). Short vol when high, long vol when low.
-            * **DIVERGENCE:** Triggered when Spot and Skew move in opposite directions (e.g. Spot up, Puts getting more expensive).
+            * **DIVERGENCE:** Triggered when Spot and 1M 25D Skew move in opposite directions.
             """)
 
         with st.expander("Heatmap Colour Key"):
             st.markdown("""
             **1. Performance & Direction (PERF %, σ MOVE)**
-            * 🟢 **Green:** Positive returns / Bullish upside moves.
-            * 🔴 **Red:** Negative returns / Bearish downside moves.
+            * 🟢 **Green:** Positive returns / Bullish.
+            * 🔴 **Red:** Negative returns / Bearish.
 
             **2. Volatility (HV, IV)**
             * 🟢 **Green:** Low absolute historical/implied volatility.
             * 🔴 **Red:** High absolute historical/implied volatility.
 
             **3. Relative Value & Skew (CARRY, 1M 25D SKEW, 5D Δ SKEW)**
-            * 🟢 **Green:** Cheap Puts / Low Volatility Risk Premium.
-            * 🔴 **Red:** Expensive Puts / High Volatility Risk Premium.
+            * 🟢 **Green:** Cheap Puts / Low VRP.
+            * 🔴 **Red:** Expensive Puts / High VRP.
 
             **4. Term Structure (T/S)**
             * 🟢 **Green:** Contango (< 1.0). Normal market state.
-            * 🔴 **Red:** Inverted (> 1.0). Signal of panic/crash.
+            * 🔴 **Red:** Backwardation (> 1.0). Signal of panic/crash.
             """)
 
         with st.expander("Chart Axis Guide"):
             st.markdown("""
             **1. IV vs Skew Z-Score**
-            * **X:** Put-Call Skew Z-Score
+            * **X:** 1M 25D Put-Call Skew Z-Score
             * **Y:** Implied Vol Z-Score
             
             **2. Strategy Compass**
@@ -176,7 +170,7 @@ with st.sidebar:
             * **Y:** Term Structure
             
             **4. Carry vs Realised Vol**
-            * **X:** 10-Day Realized Volatility
+            * **X:** 10-Day Realised Vol
             * **Y:** Carry
             
             **5. Breakout / Reversal Risk**
@@ -184,43 +178,40 @@ with st.sidebar:
             * **Y:** 5-Day Change in Skew
             """)
             
-    elif page_selection == "Strategy & Execution":
-        with st.expander("Strategy Guide & Definitions"):
+    elif page_selection == "Options Dashboard":
+        with st.expander("Charts Guide"):
             st.markdown("""
-            **1. 1m Call / Put Monitor**
-            * **X-Axis:** A blended gauge of current market panic. It averages the 1M IV Percentile with the 1M IV/RV Ratio Percentile.
-            * **Y-Axis:** 1M Call (or Put) Skew Percentile.
-            * **Highlighted Zone (Top):** Tickers above the 80th percentile in Skew, indicating historically expensive tail protection/leverage.
+            **1. 1M Call / Put Monitor**
+            * **X:** A blended gauge of current market panic. It averages the 1M IV Percentile with the 1M IV/RV Ratio Percentile.
+            * **Y:** 1M Call / Put Skew Percentile.
+            * **Highlighted Zone:** Tickers above the 80th percentile in Skew, indicating historically expensive tail protection.
 
-            **2. Selected Top Spreads 25d 10d**
-            * Scans the live options chain for executable 1-month debit spreads (Buy 25-delta, Sell 10-delta).
-            * **Cost:** Estimated net debit assuming execution at ~25% worse than the mid-price (institutional slippage).
-            * **Payout Ratio:** Max Potential Profit divided by Execution Cost. Ratios are strictly filtered between 1.0x and 40.0x for realism.
+            **2. Selected Top Spreads 25D 10D**
+            * Scans the live options chain for 1-month debit spreads (Buy 25-delta, Sell 10-delta).
+            * **Cost:** Estimated net debit assuming worst case execution at ~25% worse than the mid-price.
+            * **Payout Ratio:** Maximum Potential Profit divided by Cost. Ratios are strictly filtered between 1.0x and 40.0x.
 
-            **3. Daily Options PnL Summary**
-            * A vectorised Black-Scholes backtest engine that simulates daily rolling of short option strategies.
+            **3. Daily Short Vol PnL Summary**
+            * Simulates daily rolling of short option strategies.
             * **Cumulative PnL:** Total return assuming the strategy was executed daily and held to maturity.
-            * **Sharpe Ratio:** Risk-adjusted return (annualised). *Note: 10-day and 20-day Sharpes may appear artificially inflated or deflated due to low short-term variance.*
+            * **Sharpe Ratio:** Annualised risk-adjusted return. *Note: 10-day and 20-day Sharpes may appear artificially inflated or deflated due to low short-term variance.*
 
             **4. Historical Percentiles: Skew / Volatility**
             * **Top Chart:** Displays the raw 25d Put / 25d Call ratio.
             * **Bottom Chart:** Displays the raw 25d Call / ATM ratio.
-            * Overlays 1-Month (solid lines) and 3-Month (dotted lines) tenors to visualise term structure shifts and historical norms.
+            * Overlays 1-Month (solid lines) and 3-Month (dotted lines) tenors to visualise term structure shifts.
             """)
 
     st.divider()
     st.caption("⚠️ **DISCLAIMER:** Data is powered by Massive's **Real-time** Fair Market Value (FMV) feed. While calculated to be highly accurate, these prices are proprietary aggregates and may differ slightly from specific exchange quotes.")
 
-# ---------------------------------------------------------------------------
-# PAGE 1: MACRO VOL DASHBOARD (EXACT UNABRIDGED REPLICA OF APP_V2.PY)
-# ---------------------------------------------------------------------------
-if page_selection == "Macro Vol Dashboard":
+if page_selection == "Vol Dashboard":
     st.markdown("<h1 style='color:#00E676;'>NUSSIF <span style='color:white;'>VOL DASHBOARD</span></h1>", unsafe_allow_html=True)
-    st.caption("👈 **Click the >> icon in the top left to open the dashboard menu to refresh data and view metric definitions.**")
+    st.caption("👈 **Click the >> icon in the top left to open the dashboard menu to refresh data and view definitions.**")
     st.divider()
 
     if df is None:
-        st.error("No data found! Run `python live_engine_fast.py` first, or click 'Click to Refresh Data' in the sidebar.")
+        st.error("No data found. Click 'Click to Refresh Data' in the sidebar.")
         st.stop()
 
     def build_ribbon(category_name, tickers, source_df, col, header_color="#00E676"):
@@ -424,12 +415,12 @@ if page_selection == "Macro Vol Dashboard":
             fig3.add_shape(type="rect", xref="paper", yref="y", x0=0, x1=1, y0=1.0, y1=1.5, fillcolor="rgba(255, 61, 0, 0.05)", layer="below", line_width=0)
             fig3.add_shape(type="rect", xref="paper", yref="y", x0=0, x1=1, y0=0.7, y1=1.0, fillcolor="rgba(0, 230, 118, 0.05)", layer="below", line_width=0)
             
-            fig3.add_annotation(x=4, y=1.45, text="<b>INVERTED</b>", showarrow=False, font=dict(color="#FF3D00", size=16, family="Arial Black"), **label_box_style)
+            fig3.add_annotation(x=4, y=1.45, text="<b>BACKWARDATION</b>", showarrow=False, font=dict(color="#FF3D00", size=16, family="Arial Black"), **label_box_style)
             fig3.add_annotation(x=-4, y=0.75, text="<b>CONTANGO</b>", showarrow=False, font=dict(color="#00E676", size=16, family="Arial Black"), **label_box_style)
             
             st.plotly_chart(fig3, width="stretch")
         with c4:
-            fig4 = create_text_scatter(view_df, 'HV10', 'Carry', "CARRY vs 10 DAY REALIZED VOL", "10 DAY REALIZED VOL", "CARRY", [0, 120], [-60, 70], highlight_ticker)
+            fig4 = create_text_scatter(view_df, 'HV10', 'Carry', "CARRY vs 10 DAY REALISED VOL", "10 DAY REALISED VOL", "CARRY", [0, 120], [-60, 70], highlight_ticker)
             fig4.add_shape(type="rect", xref="paper", yref="y", x0=0, x1=1, y0=0, y1=70, fillcolor="rgba(0, 230, 118, 0.05)", layer="below", line_width=0)
             fig4.add_shape(type="rect", xref="paper", yref="y", x0=0, x1=1, y0=-60, y1=0, fillcolor="rgba(255, 61, 0, 0.05)", layer="below", line_width=0)
             
@@ -461,22 +452,16 @@ if page_selection == "Macro Vol Dashboard":
         st.info("Displaying the full universe of all 50 tickers.")
         build_dashboard_view(df, tab_name="all", show_ribbon=False)
 
-# ---------------------------------------------------------------------------
-# PAGE 2: STRATEGY & EXECUTION (NEW ENHANCEMENTS)
-# ---------------------------------------------------------------------------
-elif page_selection == "Strategy & Execution":
-    st.markdown("<h1 style='color:#00BFFF;'>NUSSIF <span style='color:white;'>STRATEGY & EXECUTION</span></h1>", unsafe_allow_html=True)
+elif page_selection == "Options Dashboard":
+    st.markdown("<h1 style='color:#00BFFF;'>NUSSIF <span style='color:white;'>OPTIONS DASHBOARD</span></h1>", unsafe_allow_html=True)
     st.divider()
 
-    # Create mapping dictionary from the loaded main dataframe to match scatter colors
     ticker_colors = dict(zip(df['Ticker'], df['Chart_Color'])) if df is not None else {}
 
-    # Sort tickers to correctly identify default indexes
     sorted_tickers = sorted(MACRO_TICKERS + SECTOR_TICKERS)
     default_spy_idx = sorted_tickers.index("SPY") if "SPY" in sorted_tickers else 0
 
-    # --- IMAGE 1 (Top): 1M Call/Put Monitor ---
-    st.markdown("#### 1m Call / Put Monitor")
+    st.markdown("#### 1M CALL / PUT MONITOR")
     
     scatter_data = []
     
@@ -521,22 +506,19 @@ elif page_selection == "Strategy & Execution":
         with c1:
             fig_c = go.Figure()
             
-            # FIXED: Single horizontal band highlighting ONLY the Y >= 80 zone across the whole X-axis
             fig_c.add_shape(type="rect", xref="x", yref="y", x0=-5, x1=105, y0=80, y1=110, fillcolor="rgba(0, 230, 118, 0.15)", layer="below", line_width=0)
             
-            # FIXED: Forces all dots to retain their Base_Color, no overrides.
             fig_c.add_trace(go.Scatter(
                 x=plot_df['Blended_X'], y=plot_df['Call_Skew_Pct'], text=plot_df['Ticker'], 
                 mode='markers+text', textposition="top center", 
                 marker=dict(color=plot_df['Base_Color'], size=9, line=dict(color='black', width=1))
             ))
             fig_c.update_layout(
-                title="1m Call Monitor", 
-                xaxis_title="avg(1m iv/rv %tile, 1m atm %tile)", 
+                title="1M CALL MONITOR", 
+                xaxis_title="avg(1M IV/RV %tile, 1M ATM %tile)", 
                 yaxis_title="Call Skew %tile", 
                 plot_bgcolor='white', font=dict(color='black')
             )
-            # Extends Y-axis past 100
             fig_c.update_xaxes(range=[-5, 105], showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
             fig_c.update_yaxes(range=[-5, 110], showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
             st.plotly_chart(fig_c, width='stretch')
@@ -544,36 +526,31 @@ elif page_selection == "Strategy & Execution":
         with c2:
             fig_p = go.Figure()
             
-            # FIXED: Single horizontal band highlighting ONLY the Y >= 80 zone across the whole X-axis
             fig_p.add_shape(type="rect", xref="x", yref="y", x0=-5, x1=105, y0=80, y1=110, fillcolor="rgba(255, 61, 0, 0.15)", layer="below", line_width=0)
             
-            # FIXED: Forces all dots to retain their Base_Color, no overrides.
             fig_p.add_trace(go.Scatter(
                 x=plot_df['Blended_X'], y=plot_df['Put_Skew_Pct'], text=plot_df['Ticker'], 
                 mode='markers+text', textposition="top center", 
                 marker=dict(color=plot_df['Base_Color'], size=9, line=dict(color='black', width=1))
             ))
             fig_p.update_layout(
-                title="1m Put Monitor", 
-                xaxis_title="avg(1m iv/rv %tile, 1m atm %tile)", 
+                title="1M PUT MONITOR", 
+                xaxis_title="avg(1M IV/RV %tile, 1M ATM %tile)", 
                 yaxis_title="Put Skew %tile", 
                 plot_bgcolor='white', font=dict(color='black')
             )
-            # Extends Y-axis past 100
             fig_p.update_xaxes(range=[-5, 105], showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
             fig_p.update_yaxes(range=[-5, 110], showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
             st.plotly_chart(fig_p, width='stretch')
     else:
-        st.warning("Run `flatfiles_builder_upgrade.py` to calculate exact Skew percentiles.")
+        st.warning("No data found. Click 'Click to Refresh Data' in the sidebar.")
 
     st.divider()
 
-    # --- IMAGE 2: Selected Top Spreads ---
-    st.markdown("#### Selected Top Spreads 25d 10d")
+    st.markdown("#### SELECTED TOP SPREADS 25D/10D")
     spread_df = load_spreads()
     
     if not spread_df.empty:
-        # Search/Filter Function
         spread_search_ticker = st.selectbox(
             "🔎 Filter Spreads by Ticker", 
             ["All"] + sorted(spread_df['Ticker'].unique().tolist()),
@@ -588,47 +565,44 @@ elif page_selection == "Strategy & Execution":
         c3, c4 = st.columns(2)
         
         def format_spread_table(df_subset):
-            # Mathematically block out unrealistic payout ratios (>40) AND those lower than 1.0
             df_subset = df_subset[(df_subset['Payout Ratio'] <= 40.0) & (df_subset['Payout Ratio'] >= 1.0)]
 
-            display_cols = ['Ticker', 'Expiration', 'Strike 1', 'Strike 2', 'S1 %spot', 'S2 %spot', 'Cost', 'Cost % Spot', 'Payout Ratio']
+            display_cols = ['Ticker', 'Expiration', 'Strike 1', 'Strike 2', 'S1 %spot', 'S2 %spot', 'Cost', 'Cost %spot', 'Payout Ratio']
             df_display = df_subset[display_cols].copy()
-            # Sort and display all eligible results
             df_display = df_display.sort_values(by="Payout Ratio", ascending=False)
             
             format_dict = {
                 'Strike 1': '{:.1f}', 'Strike 2': '{:.1f}',
                 'S1 %spot': '{:.1f}', 'S2 %spot': '{:.1f}', 
-                'Cost': '{:.2f}', 'Cost % Spot': '{:.1f}', 'Payout Ratio': '{:.1f}'
+                'Cost': '{:.2f}', 'Cost %spot': '{:.1f}', 'Payout Ratio': '{:.1f}'
             }
             return df_display.style.format(format_dict).background_gradient(subset=['Payout Ratio'], cmap='Blues', vmin=4.0, vmax=11.5).set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
 
         with c3:
-            st.markdown("**Selected Top Put Spreads 25d 10d**")
+            st.markdown("**SELECTED TOP PUT SPREADS 25D/10D**")
             put_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'PUT']
             if put_display.empty:
                 st.info("No viable Put spreads found for this selection.")
             else:
                 st.dataframe(format_spread_table(put_display), hide_index=True, width='stretch')
         with c4:
-            st.markdown("**Selected Top Call Spreads 25d 10d**")
+            st.markdown("**SELECTED TOP CALL SPREADS 25D/10D**")
             call_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'CALL']
             if call_display.empty:
                 st.info("No viable Call spreads found for this selection.")
             else:
                 st.dataframe(format_spread_table(call_display), hide_index=True, width='stretch')
     else:
-        st.info("Run `python build_spreads_upgrade.py` to populate execution tables.")
+        st.info("No data found. Click 'Click to Refresh Data' in the sidebar.")
 
     st.divider()
 
-    # --- IMAGE 3: SPX Daily Options PnL Summary ---
-    st.markdown("#### Daily Options PnL Summary")
+    st.markdown("#### DAILY SHORT VOL PNL SUMMARY")
     
     if os.path.exists("pnl_backtest_results.csv"):
         pnl_df = pd.read_csv("pnl_backtest_results.csv")
         
-        pnl_ticker = st.selectbox("Select Ticker for PnL Summary", sorted_tickers, index=default_spy_idx, key="pnl_ticker_select")
+        pnl_ticker = st.selectbox("🔎 Select Ticker for PnL Summary", sorted_tickers, index=default_spy_idx, key="pnl_ticker_select")
         
         selected_pnl = pnl_df[pnl_df['Ticker'] == pnl_ticker].drop(columns=['Ticker'])
         
@@ -652,7 +626,7 @@ elif page_selection == "Strategy & Execution":
             elif val < 0: return 'background-color: #ffc7ce; color: #9c0006'
             return ''
 
-        st.markdown("**Cumulative PnL**")
+        st.markdown("**CUMULATIVE PNL**")
         st.dataframe(
             cum_df.style.format({c: format_pct for c in cum_df.columns if c != 'Strategy'})
             .map(color_pnl, subset=[c for c in cum_df.columns if c != 'Strategy'])
@@ -662,7 +636,7 @@ elif page_selection == "Strategy & Execution":
         )
         
         st.write("")
-        st.markdown("**Sharpe Ratio**")
+        st.markdown("**SHARPE RATIO**")
         st.dataframe(
             sharpe_df.style.format({c: format_float for c in sharpe_df.columns if c != 'Strategy'})
             .map(color_pnl, subset=[c for c in sharpe_df.columns if c != 'Strategy'])
@@ -671,14 +645,13 @@ elif page_selection == "Strategy & Execution":
             width='stretch'
         )
     else:
-        st.info("Run `python build_pnl_summary_upgrade.py` to populate this table.")
+        st.info("No data found. Click 'Click to Refresh Data' in the sidebar.")
 
     st.divider()
 
-    # --- IMAGE 4: Historical Percentiles ---
-    st.markdown("#### Historical Percentiles: Skew / Volatility")
+    st.markdown("#### HISTORICAL PERCENTILE: SKEW / VOL")
     
-    sel_ticker = st.selectbox("Select Ticker for Historical Skew", sorted_tickers, index=default_spy_idx, key="history_ticker_select")
+    sel_ticker = st.selectbox("🔎 Select Ticker for Historical Skew", sorted_tickers, index=default_spy_idx, key="history_ticker_select")
     
     hist_df = load_history(sel_ticker)
     
@@ -714,10 +687,9 @@ elif page_selection == "Strategy & Execution":
             
         fig.update_layout(height=500, plot_bgcolor='white', font=dict(color='black'), showlegend=True)
         
-        # Enhanced Gridline Granularity
         fig.update_xaxes(showgrid=True, gridcolor='#E5E7EB', tickformat="%b %Y", dtick="M1", zeroline=True, zerolinecolor='#9CA3AF')
         fig.update_yaxes(showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
         
         st.plotly_chart(fig, width='stretch')
     else:
-        st.warning(f"No valid historical data found for {sel_ticker} in the 1Y folder. Ensure `flatfiles_builder_upgrade.py` has finished running.")
+        st.warning("No data found. Click 'Click to Refresh Data' in the sidebar.")
