@@ -2,9 +2,8 @@ name: Daily Vol Dashboard Pipeline
 
 on:
   schedule:
-    # Runs at 10:00 AM UTC (6:00 AM Eastern Time) every single day.
     - cron: '0 10 * * *'
-  workflow_dispatch: # Allows you to manually trigger the workflow from GitHub
+  workflow_dispatch: 
 
 permissions:
   contents: write
@@ -13,7 +12,7 @@ jobs:
   update-data:
     runs-on: ubuntu-latest
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true # Clears the Node.js deprecation warning
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true 
 
     steps:
     - name: Checkout Repository
@@ -39,7 +38,7 @@ jobs:
         MASSIVE_S3_BUCKET: ${{ secrets.MASSIVE_S3_BUCKET }}
         MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
       run: |
-        echo "=== Step 1: Updating Macro Dashboard Feed ==="
+        echo "=== Step 1: Updating Macro Historical Data (AWS S3) ==="
         python flatfiles_updater.py
         
         echo "=== Step 2: Appending 1Y Strategy History ==="
@@ -48,7 +47,7 @@ jobs:
         echo "=== Step 3: Re-calculating PnL Backtests ==="
         python build_pnl_summary_upgrade.py
         
-        echo "=== Step 4: Scanning Live Spreads ==="
+        echo "=== Step 4: Scanning Pre-Market Spreads ==="
         python build_spreads_upgrade.py
 
     - name: Commit and Push Updated CSVs
@@ -56,19 +55,12 @@ jobs:
         git config --global user.name 'GitHub Action Bot'
         git config --global user.email 'action@github.com'
         
-        # Stage the Macro Dashboard feed
-        git add live_dashboard_feed_fast.csv
-        
-        # Stage the Macro Dashboard historical data
+        # Stage the history and backtest files
         git add massive_historical_options_data/*.csv
-        
-        # Stage the Strategy history files
         git add massive_historical_1y_data/*.csv
-        
-        # Stage the newly generated Strategy data
         git add pnl_backtest_results.csv
         git add live_spread_execution.csv
         
-        # Only commit if there are actually changes to avoid failing the run
+        # Only commit if there are actual changes
         git diff --quiet && git diff --staged --quiet || git commit -m "Automated Pipeline Update: $(date +'%Y-%m-%d')"
         git push
