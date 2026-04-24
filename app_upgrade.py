@@ -559,7 +559,6 @@ elif page_selection == "Options Dashboard":
             df_subset = df_subset[(df_subset['Payout Ratio'] <= 40.0) & (df_subset['Payout Ratio'] >= 1.0)]
             df_display = df_subset.sort_values(by="Payout Ratio", ascending=False).head(20)
             
-            # Format Expiration to MM-DD to save massive horizontal space
             df_display['Expiration'] = pd.to_datetime(df_display['Expiration']).dt.strftime('%m-%d')
             
             display_cols = ['Ticker', 'Expiration', 'Strike 1', 'Strike 2', 'S1 %spot', 'S2 %spot', 'Cost', 'Payout Ratio']
@@ -569,7 +568,7 @@ elif page_selection == "Options Dashboard":
                 'Strike 2': 'K2',
                 'S1 %spot': '%S1', 
                 'S2 %spot': '%S2',
-                'Payout Ratio': 'Pay'
+                'Payout Ratio': 'Payout'
             })
             
             format_dict = {
@@ -578,7 +577,6 @@ elif page_selection == "Options Dashboard":
                 'Cost': '{:.2f}', 'Pay': '{:.1f}'
             }
             
-            # Dynamic colormap gradient (no fixed vmin/vmax)
             return df_display.style.format(format_dict).background_gradient(subset=['Pay'], cmap='Blues').set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
 
         c_put, c_call = st.columns(2)
