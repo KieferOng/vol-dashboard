@@ -574,10 +574,10 @@ elif page_selection == "Options Dashboard":
             format_dict = {
                 'K1': '{:.1f}', 'K2': '{:.1f}',
                 '%S1': '{:.1f}', '%S2': '{:.1f}', 
-                'Cost': '{:.2f}', 'Pay': '{:.1f}'
+                'Cost': '{:.2f}', 'Payout': '{:.1f}'
             }
             
-            return df_display.style.format(format_dict).background_gradient(subset=['Pay'], cmap='Blues').set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
+            return df_display.style.format(format_dict).background_gradient(subset=['Payout'], cmap='Blues').set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
 
         c_put, c_call = st.columns(2)
         
