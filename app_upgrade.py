@@ -496,7 +496,6 @@ elif page_selection == "Options Dashboard":
             other_rows = plot_df[plot_df['Ticker'] != highlight_tkr]
             plot_df = pd.concat([other_rows, highlight_row])
             
-        # Stacked Monitors (Full Width & Taller)
         fig_c = go.Figure()
         fig_c.add_shape(type="rect", xref="x", yref="y", x0=-5, x1=105, y0=80, y1=110, fillcolor="rgba(0, 230, 118, 0.15)", layer="below", line_width=0)
         fig_c.add_trace(go.Scatter(
@@ -557,22 +556,27 @@ elif page_selection == "Options Dashboard":
             filtered_spreads = filtered_spreads[filtered_spreads['Ticker'] == spread_search_ticker]
 
         def format_spread_table(df_subset):
-            # Limit to Top 20 for compactness
             df_subset = df_subset[(df_subset['Payout Ratio'] <= 40.0) & (df_subset['Payout Ratio'] >= 1.0)]
             df_display = df_subset.sort_values(by="Payout Ratio", ascending=False).head(20)
             
-            # Shortened column names to make the table auto-fit tightly
-            display_cols = ['Ticker', 'Expiration', 'Strike 1', 'Strike 2', 'S1 %spot', 'S2 %spot', 'Cost', 'Cost % Spot', 'Payout Ratio']
-            df_display = df_display[display_cols].rename(columns={'Expiration': 'Expiry', 'Cost % Spot': 'Cost %', 'Payout Ratio': 'Payout'})
+            # Shorthand columns to squish the table horizontally
+            display_cols = ['Ticker', 'Expiration', 'Strike 1', 'Strike 2', 'S1 %spot', 'S2 %spot', 'Cost', 'Payout Ratio']
+            df_display = df_display[display_cols].rename(columns={
+                'Expiration': 'Exp', 
+                'Strike 1': 'K1', 
+                'Strike 2': 'K2',
+                'S1 %spot': '%S1', 
+                'S2 %spot': '%S2',
+                'Payout Ratio': 'Pay'
+            })
             
             format_dict = {
-                'Strike 1': '{:.1f}', 'Strike 2': '{:.1f}',
-                'S1 %spot': '{:.1f}', 'S2 %spot': '{:.1f}', 
-                'Cost': '{:.2f}', 'Cost %': '{:.1f}', 'Payout': '{:.1f}'
+                'K1': '{:.1f}', 'K2': '{:.1f}',
+                '%S1': '{:.1f}', '%S2': '{:.1f}', 
+                'Cost': '{:.2f}', 'Pay': '{:.1f}'
             }
-            return df_display.style.format(format_dict).background_gradient(subset=['Payout'], cmap='Blues', vmin=4.0, vmax=11.5).set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
+            return df_display.style.format(format_dict).background_gradient(subset=['Pay'], cmap='Blues', vmin=4.0, vmax=11.5).set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
 
-        # Side-by-side Top 20 Spreads
         c_put, c_call = st.columns(2)
         
         with c_put:
@@ -616,10 +620,10 @@ elif page_selection == "Options Dashboard":
         def format_float(val):
             return f"{val:.1f}" if pd.notna(val) else ""
 
-        numeric_cum_cols = [c for c in cum_cols if c != 'Strategy']
-        numeric_sharpe_cols = [c for c in sharpe_cols if c != 'Strategy']
+        # FIX: Pulling the column names AFTER they were renamed in sharpe_df
+        numeric_cum_cols = [c for c in cum_df.columns if c != 'Strategy']
+        numeric_sharpe_cols = [c for c in sharpe_df.columns if c != 'Strategy']
 
-        # Side-by-side layout for PnL tables with RdYlGn color grading
         c_cum, c_sharpe = st.columns(2)
         
         with c_cum:
@@ -659,13 +663,11 @@ elif page_selection == "Options Dashboard":
         if has_1m:
             plot_df_1m = hist_df.dropna(subset=['1M_25dP/25dC', '1M_25dC/ATM'])
             
-            # 63 trading days represents a roughly 3-month rolling window
             plot_df_1m['Skew_Rolling_80th'] = plot_df_1m['1M_25dP/25dC'].rolling(63).quantile(0.8)
             plot_df_1m['Skew_Rolling_20th'] = plot_df_1m['1M_25dP/25dC'].rolling(63).quantile(0.2)
             
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dP/25dC'], line=dict(color='lightgray'), name=f"{sel_ticker} 1M Skew - 25dP/25dC"), row=1, col=1)
             
-            # Add rolling percentiles lines to establish cheap/rich bands
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Skew_Rolling_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)"), row=1, col=1)
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Skew_Rolling_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)"), row=1, col=1)
             
