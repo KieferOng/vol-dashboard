@@ -578,7 +578,7 @@ elif page_selection == "Options Dashboard":
                 'Cost': '{:.2f}', 'Pay': '{:.1f}'
             }
             
-            # Removed vmin and vmax so the gradient dynamically maps to the current table's min/max
+            # Dynamic colormap gradient (no fixed vmin/vmax)
             return df_display.style.format(format_dict).background_gradient(subset=['Pay'], cmap='Blues').set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
 
         c_put, c_call = st.columns(2)
@@ -589,7 +589,6 @@ elif page_selection == "Options Dashboard":
             if put_display.empty:
                 st.info("No viable Put spreads found.")
             else:
-                # Added height=800 to ensure all 20 rows display without a vertical scrollbar
                 st.dataframe(format_spread_table(put_display), hide_index=True, use_container_width=True, height=800)
                 
         with c_call:
@@ -598,26 +597,7 @@ elif page_selection == "Options Dashboard":
             if call_display.empty:
                 st.info("No viable Call spreads found.")
             else:
-                # Added height=800 to ensure all 20 rows display without a vertical scrollbar
                 st.dataframe(format_spread_table(call_display), hide_index=True, use_container_width=True, height=800)
-
-        c_put, c_call = st.columns(2)
-        
-        with c_put:
-            st.markdown("**TOP 20 PUT SPREADS**")
-            put_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'PUT']
-            if put_display.empty:
-                st.info("No viable Put spreads found.")
-            else:
-                st.dataframe(format_spread_table(put_display), hide_index=True, use_container_width=True)
-                
-        with c_call:
-            st.markdown("**TOP 20 CALL SPREADS**")
-            call_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'CALL']
-            if call_display.empty:
-                st.info("No viable Call spreads found.")
-            else:
-                st.dataframe(format_spread_table(call_display), hide_index=True, use_container_width=True)
     else:
         st.info("No data found. Click 'Click to Refresh Data' in the sidebar.")
 
@@ -652,7 +632,6 @@ elif page_selection == "Options Dashboard":
         with c_cum:
             st.markdown("**CUMULATIVE PNL**")
             cum_style = cum_df.style.format({c: format_pct for c in numeric_cum_cols})
-            # Centering the gradient at 0 for every column individually
             for col in numeric_cum_cols:
                 m = cum_df[col].abs().max()
                 if pd.isna(m) or m == 0: m = 1
@@ -666,7 +645,6 @@ elif page_selection == "Options Dashboard":
         with c_sharpe:
             st.markdown("**SHARPE RATIO**")
             sharpe_style = sharpe_df.style.format({c: format_float for c in numeric_sharpe_cols})
-            # Centering the gradient at 0 for every column individually
             for col in numeric_sharpe_cols:
                 m = sharpe_df[col].abs().max()
                 if pd.isna(m) or m == 0: m = 1
@@ -699,20 +677,16 @@ elif page_selection == "Options Dashboard":
         if has_1m:
             plot_df_1m = hist_df.dropna(subset=['1M_25dP/25dC', '1M_25dC/ATM']).copy()
             
-            # Put Skew 80/20 bands
             plot_df_1m['Put_Skew_80th'] = plot_df_1m['1M_25dP/25dC'].rolling(63).quantile(0.8)
             plot_df_1m['Put_Skew_20th'] = plot_df_1m['1M_25dP/25dC'].rolling(63).quantile(0.2)
             
-            # Call Skew 80/20 bands
             plot_df_1m['Call_Skew_80th'] = plot_df_1m['1M_25dC/ATM'].rolling(63).quantile(0.8)
             plot_df_1m['Call_Skew_20th'] = plot_df_1m['1M_25dC/ATM'].rolling(63).quantile(0.2)
             
-            # Top Chart Traces
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dP/25dC'], line=dict(color='lightgray'), name=f"{sel_ticker} 1M Put Skew"), row=1, col=1)
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)"), row=1, col=1)
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)"), row=1, col=1)
             
-            # Bottom Chart Traces
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dC/ATM'], line=dict(color='pink'), name=f"{sel_ticker} 1M Call Skew"), row=2, col=1)
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)", showlegend=False), row=2, col=1)
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)", showlegend=False), row=2, col=1)
