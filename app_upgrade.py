@@ -672,28 +672,37 @@ elif page_selection == "Options Dashboard":
         has_1m = '1M_25dP/25dC' in hist_df.columns and not hist_df['1M_25dP/25dC'].dropna().empty
         has_3m = '3M_25dP/25dC' in hist_df.columns and not hist_df['3M_25dP/25dC'].dropna().empty
         
+        # Calculate percentiles first so all variables are ready
         if has_1m:
             plot_df_1m = hist_df.dropna(subset=['1M_25dP/25dC', '1M_25dC/ATM']).copy()
-            
             plot_df_1m['Put_Skew_80th'] = plot_df_1m['1M_25dP/25dC'].rolling(63).quantile(0.8)
             plot_df_1m['Put_Skew_20th'] = plot_df_1m['1M_25dP/25dC'].rolling(63).quantile(0.2)
-            
             plot_df_1m['Call_Skew_80th'] = plot_df_1m['1M_25dC/ATM'].rolling(63).quantile(0.8)
             plot_df_1m['Call_Skew_20th'] = plot_df_1m['1M_25dC/ATM'].rolling(63).quantile(0.2)
             
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dP/25dC'], line=dict(color='lightgray'), name=f"{sel_ticker} 1M Put Skew", legend="legend"), row=1, col=1)
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)", legend="legend"), row=1, col=1)
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)", legend="legend"), row=1, col=1)
-            
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dC/ATM'], line=dict(color='pink'), name=f"{sel_ticker} 1M Call Skew", legend="legend2"), row=2, col=1)
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)", legend="legend2"), row=2, col=1)
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)", legend="legend2"), row=2, col=1)
-        
         if has_3m:
             plot_df_3m = hist_df.dropna(subset=['3M_25dP/25dC', '3M_25dC/ATM'])
-            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dP/25dC'], line=dict(color='gray', dash='dot'), name=f"{sel_ticker} 3M Put Skew", legend="legend"), row=1, col=1)
-            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dC/ATM'], line=dict(color='#8B0000', dash='dot'), name=f"{sel_ticker} 3M Call Skew", legend="legend2"), row=2, col=1)
-        else:
+
+        # --- ROW 1 (Put Skew Traces in requested order) ---
+        if has_1m:
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dP/25dC'], line=dict(color='lightgray'), name=f"{sel_ticker} 1M Put Skew", legend="legend"), row=1, col=1)
+        if has_3m:
+            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dP/25dC'], line=dict(color='gray'), name=f"{sel_ticker} 3M Put Skew", legend="legend"), row=1, col=1)
+        if has_1m:
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)", legend="legend"), row=1, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)", legend="legend"), row=1, col=1)
+
+        # --- ROW 2 (Call Skew Traces in requested order) ---
+        if has_1m:
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dC/ATM'], line=dict(color='pink'), name=f"{sel_ticker} 1M Call Skew", legend="legend2"), row=2, col=1)
+        if has_3m:
+            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dC/ATM'], line=dict(color='#8B0000'), name=f"{sel_ticker} 3M Call Skew", legend="legend2"), row=2, col=1)
+        if has_1m:
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)", legend="legend2"), row=2, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)", legend="legend2"), row=2, col=1)
+
+        # Post-chart warnings
+        if not has_3m and has_1m:
             st.info(f"ℹ️ **Note:** 3-Month options data is unavailable or insufficient for {sel_ticker} due to low chain liquidity. Displaying 1-Month data only.")
             
         fig.update_layout(
