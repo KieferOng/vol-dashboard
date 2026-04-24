@@ -577,7 +577,29 @@ elif page_selection == "Options Dashboard":
                 '%S1': '{:.1f}', '%S2': '{:.1f}', 
                 'Cost': '{:.2f}', 'Pay': '{:.1f}'
             }
-            return df_display.style.format(format_dict).background_gradient(subset=['Pay'], cmap='Blues', vmin=4.0, vmax=11.5).set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
+            
+            # Removed vmin and vmax so the gradient dynamically maps to the current table's min/max
+            return df_display.style.format(format_dict).background_gradient(subset=['Pay'], cmap='Blues').set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
+
+        c_put, c_call = st.columns(2)
+        
+        with c_put:
+            st.markdown("**TOP 20 PUT SPREADS**")
+            put_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'PUT']
+            if put_display.empty:
+                st.info("No viable Put spreads found.")
+            else:
+                # Added height=800 to ensure all 20 rows display without a vertical scrollbar
+                st.dataframe(format_spread_table(put_display), hide_index=True, use_container_width=True, height=800)
+                
+        with c_call:
+            st.markdown("**TOP 20 CALL SPREADS**")
+            call_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'CALL']
+            if call_display.empty:
+                st.info("No viable Call spreads found.")
+            else:
+                # Added height=800 to ensure all 20 rows display without a vertical scrollbar
+                st.dataframe(format_spread_table(call_display), hide_index=True, use_container_width=True, height=800)
 
         c_put, c_call = st.columns(2)
         
