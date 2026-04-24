@@ -557,7 +557,7 @@ elif page_selection == "Options Dashboard":
 
         def format_spread_table(df_subset):
             df_subset = df_subset[(df_subset['Payout Ratio'] <= 40.0) & (df_subset['Payout Ratio'] >= 1.0)]
-            df_display = df_subset.sort_values(by="Payout Ratio", ascending=False).head(20)
+            df_display = df_subset.sort_values(by="Payout Ratio", ascending=False).head(22)
             
             df_display['Expiration'] = pd.to_datetime(df_display['Expiration']).dt.strftime('%m-%d')
             
