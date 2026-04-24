@@ -473,7 +473,7 @@ elif page_selection == "Options Dashboard":
                 base_color = ticker_colors.get(tkr, '#00E676')
 
                 is_highlighted = (tkr == highlight_tkr)
-                m_size = 16 if is_highlighted else 8
+                m_size = 18 if is_highlighted else 9
                 l_width = 2.5 if is_highlighted else 1
                 opacity = 1.0 if (highlight_tkr == "None" or is_highlighted) else 0.2
 
@@ -496,59 +496,34 @@ elif page_selection == "Options Dashboard":
             other_rows = plot_df[plot_df['Ticker'] != highlight_tkr]
             plot_df = pd.concat([other_rows, highlight_row])
             
-        c1, c2 = st.columns(2)
+        # Stacked Monitors (Full Width & Taller)
+        fig_c = go.Figure()
+        fig_c.add_shape(type="rect", xref="x", yref="y", x0=-5, x1=105, y0=80, y1=110, fillcolor="rgba(0, 230, 118, 0.15)", layer="below", line_width=0)
+        fig_c.add_trace(go.Scatter(
+            x=plot_df['Blended_X'], y=plot_df['Call_Skew_Pct'], text=plot_df['Ticker'], 
+            mode='markers+text', textposition="top center", 
+            marker=dict(color=plot_df['Base_Color'], size=plot_df['Marker_Size'], line=dict(color='black', width=plot_df['Line_Width']), opacity=plot_df['Opacity']),
+            textfont=dict(color=['black' if op == 1.0 else 'rgba(0,0,0,0)' for op in plot_df['Opacity']])
+        ))
+        fig_c.update_layout(title="1M CALL MONITOR", xaxis_title="avg(1M IV/RV %tile, 1M ATM %tile)", yaxis_title="Call Skew %tile", height=600, plot_bgcolor='white', font=dict(color='black'))
+        fig_c.update_xaxes(range=[-5, 105], showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
+        fig_c.update_yaxes(range=[-5, 110], showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
+        st.plotly_chart(fig_c, use_container_width=True)
         
-        with c1:
-            fig_c = go.Figure()
-            
-            fig_c.add_shape(type="rect", xref="x", yref="y", x0=-5, x1=105, y0=80, y1=110, fillcolor="rgba(0, 230, 118, 0.15)", layer="below", line_width=0)
-            
-            fig_c.add_trace(go.Scatter(
-                x=plot_df['Blended_X'], y=plot_df['Call_Skew_Pct'], text=plot_df['Ticker'], 
-                mode='markers+text', textposition="top center", 
-                marker=dict(
-                    color=plot_df['Base_Color'], 
-                    size=plot_df['Marker_Size'], 
-                    line=dict(color='black', width=plot_df['Line_Width']),
-                    opacity=plot_df['Opacity']
-                ),
-                textfont=dict(color=['black' if op == 1.0 else 'rgba(0,0,0,0)' for op in plot_df['Opacity']])
-            ))
-            fig_c.update_layout(
-                title="1M CALL MONITOR", 
-                xaxis_title="avg(1M IV/RV %tile, 1M ATM %tile)", 
-                yaxis_title="Call Skew %tile", 
-                plot_bgcolor='white', font=dict(color='black')
-            )
-            fig_c.update_xaxes(range=[-5, 105], showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
-            fig_c.update_yaxes(range=[-5, 110], showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
-            st.plotly_chart(fig_c, width='stretch')
-            
-        with c2:
-            fig_p = go.Figure()
-            
-            fig_p.add_shape(type="rect", xref="x", yref="y", x0=-5, x1=105, y0=80, y1=110, fillcolor="rgba(255, 61, 0, 0.15)", layer="below", line_width=0)
-            
-            fig_p.add_trace(go.Scatter(
-                x=plot_df['Blended_X'], y=plot_df['Put_Skew_Pct'], text=plot_df['Ticker'], 
-                mode='markers+text', textposition="top center", 
-                marker=dict(
-                    color=plot_df['Base_Color'], 
-                    size=plot_df['Marker_Size'], 
-                    line=dict(color='black', width=plot_df['Line_Width']),
-                    opacity=plot_df['Opacity']
-                ),
-                textfont=dict(color=['black' if op == 1.0 else 'rgba(0,0,0,0)' for op in plot_df['Opacity']])
-            ))
-            fig_p.update_layout(
-                title="1M PUT MONITOR", 
-                xaxis_title="avg(1M IV/RV %tile, 1M ATM %tile)", 
-                yaxis_title="Put Skew %tile", 
-                plot_bgcolor='white', font=dict(color='black')
-            )
-            fig_p.update_xaxes(range=[-5, 105], showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
-            fig_p.update_yaxes(range=[-5, 110], showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
-            st.plotly_chart(fig_p, width='stretch')
+        st.write("")
+        
+        fig_p = go.Figure()
+        fig_p.add_shape(type="rect", xref="x", yref="y", x0=-5, x1=105, y0=80, y1=110, fillcolor="rgba(255, 61, 0, 0.15)", layer="below", line_width=0)
+        fig_p.add_trace(go.Scatter(
+            x=plot_df['Blended_X'], y=plot_df['Put_Skew_Pct'], text=plot_df['Ticker'], 
+            mode='markers+text', textposition="top center", 
+            marker=dict(color=plot_df['Base_Color'], size=plot_df['Marker_Size'], line=dict(color='black', width=plot_df['Line_Width']), opacity=plot_df['Opacity']),
+            textfont=dict(color=['black' if op == 1.0 else 'rgba(0,0,0,0)' for op in plot_df['Opacity']])
+        ))
+        fig_p.update_layout(title="1M PUT MONITOR", xaxis_title="avg(1M IV/RV %tile, 1M ATM %tile)", yaxis_title="Put Skew %tile", height=600, plot_bgcolor='white', font=dict(color='black'))
+        fig_p.update_xaxes(range=[-5, 105], showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
+        fig_p.update_yaxes(range=[-5, 110], showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
+        st.plotly_chart(fig_p, use_container_width=True)
     else:
         st.warning("No data found. Click 'Click to Refresh Data' in the sidebar.")
 
@@ -582,34 +557,39 @@ elif page_selection == "Options Dashboard":
             filtered_spreads = filtered_spreads[filtered_spreads['Ticker'] == spread_search_ticker]
 
         def format_spread_table(df_subset):
+            # Limit to Top 20 for compactness
             df_subset = df_subset[(df_subset['Payout Ratio'] <= 40.0) & (df_subset['Payout Ratio'] >= 1.0)]
-
+            df_display = df_subset.sort_values(by="Payout Ratio", ascending=False).head(20)
+            
+            # Shortened column names to make the table auto-fit tightly
             display_cols = ['Ticker', 'Expiration', 'Strike 1', 'Strike 2', 'S1 %spot', 'S2 %spot', 'Cost', 'Cost % Spot', 'Payout Ratio']
-            df_display = df_subset[display_cols].copy()
-            df_display = df_display.sort_values(by="Payout Ratio", ascending=False)
+            df_display = df_display[display_cols].rename(columns={'Expiration': 'Expiry', 'Cost % Spot': 'Cost %', 'Payout Ratio': 'Payout'})
             
             format_dict = {
                 'Strike 1': '{:.1f}', 'Strike 2': '{:.1f}',
                 'S1 %spot': '{:.1f}', 'S2 %spot': '{:.1f}', 
-                'Cost': '{:.2f}', 'Cost % Spot': '{:.1f}', 'Payout Ratio': '{:.1f}'
+                'Cost': '{:.2f}', 'Cost %': '{:.1f}', 'Payout': '{:.1f}'
             }
-            return df_display.style.format(format_dict).background_gradient(subset=['Payout Ratio'], cmap='Blues', vmin=4.0, vmax=11.5).set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
+            return df_display.style.format(format_dict).background_gradient(subset=['Payout'], cmap='Blues', vmin=4.0, vmax=11.5).set_table_styles([{'selector': 'th', 'props': [('background-color', 'white'), ('color', 'black')]}])
 
-        st.markdown("**SELECTED TOP PUT SPREADS 25D/10D**")
-        put_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'PUT']
-        if put_display.empty:
-            st.info("No viable Put spreads found for this selection.")
-        else:
-            st.dataframe(format_spread_table(put_display), hide_index=True, width='stretch')
+        # Side-by-side Top 20 Spreads
+        c_put, c_call = st.columns(2)
         
-        st.write("")
-        
-        st.markdown("**SELECTED TOP CALL SPREADS 25D/10D**")
-        call_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'CALL']
-        if call_display.empty:
-            st.info("No viable Call spreads found for this selection.")
-        else:
-            st.dataframe(format_spread_table(call_display), hide_index=True, width='stretch')
+        with c_put:
+            st.markdown("**TOP 20 PUT SPREADS**")
+            put_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'PUT']
+            if put_display.empty:
+                st.info("No viable Put spreads found.")
+            else:
+                st.dataframe(format_spread_table(put_display), hide_index=True, use_container_width=True)
+                
+        with c_call:
+            st.markdown("**TOP 20 CALL SPREADS**")
+            call_display = filtered_spreads[filtered_spreads['Spread_Type'] == 'CALL']
+            if call_display.empty:
+                st.info("No viable Call spreads found.")
+            else:
+                st.dataframe(format_spread_table(call_display), hide_index=True, use_container_width=True)
     else:
         st.info("No data found. Click 'Click to Refresh Data' in the sidebar.")
 
@@ -631,37 +611,34 @@ elif page_selection == "Options Dashboard":
         sharpe_df = selected_pnl[sharpe_cols].rename(columns=lambda x: x.replace('Sharpe_', '') if 'Sharpe_' in x else x)
 
         def format_pct(val):
-            if pd.isna(val): return ""
-            return f"{val:.1%}"
+            return f"{val:.1%}" if pd.notna(val) else ""
             
         def format_float(val):
-            if pd.isna(val): return ""
-            return f"{val:.1f}"
+            return f"{val:.1f}" if pd.notna(val) else ""
 
-        def color_pnl(val):
-            if pd.isna(val) or type(val) == str: return ''
-            if val > 0: return 'background-color: #c6efce; color: #006100'
-            elif val < 0: return 'background-color: #ffc7ce; color: #9c0006'
-            return ''
+        numeric_cum_cols = [c for c in cum_cols if c != 'Strategy']
+        numeric_sharpe_cols = [c for c in sharpe_cols if c != 'Strategy']
 
-        st.markdown("**CUMULATIVE PNL**")
-        st.dataframe(
-            cum_df.style.format({c: format_pct for c in cum_df.columns if c != 'Strategy'})
-            .map(color_pnl, subset=[c for c in cum_df.columns if c != 'Strategy'])
-            .set_table_styles([{'selector': 'th', 'props': [('background-color', '#9c0006'), ('color', 'white')]}]),
-            hide_index=True,
-            width='stretch'
-        )
+        # Side-by-side layout for PnL tables with RdYlGn color grading
+        c_cum, c_sharpe = st.columns(2)
         
-        st.write("")
-        st.markdown("**SHARPE RATIO**")
-        st.dataframe(
-            sharpe_df.style.format({c: format_float for c in sharpe_df.columns if c != 'Strategy'})
-            .map(color_pnl, subset=[c for c in sharpe_df.columns if c != 'Strategy'])
-            .set_table_styles([{'selector': 'th', 'props': [('background-color', '#9c0006'), ('color', 'white')]}]),
-            hide_index=True,
-            width='stretch'
-        )
+        with c_cum:
+            st.markdown("**CUMULATIVE PNL**")
+            st.dataframe(
+                cum_df.style.format({c: format_pct for c in numeric_cum_cols})
+                .background_gradient(subset=numeric_cum_cols, cmap='RdYlGn')
+                .set_table_styles([{'selector': 'th', 'props': [('background-color', '#262730'), ('color', 'white')]}]),
+                hide_index=True, use_container_width=True
+            )
+            
+        with c_sharpe:
+            st.markdown("**SHARPE RATIO**")
+            st.dataframe(
+                sharpe_df.style.format({c: format_float for c in numeric_sharpe_cols})
+                .background_gradient(subset=numeric_sharpe_cols, cmap='RdYlGn')
+                .set_table_styles([{'selector': 'th', 'props': [('background-color', '#262730'), ('color', 'white')]}]),
+                hide_index=True, use_container_width=True
+            )
     else:
         st.info("No data found. Click 'Click to Refresh Data' in the sidebar.")
 
@@ -681,33 +658,30 @@ elif page_selection == "Options Dashboard":
         
         if has_1m:
             plot_df_1m = hist_df.dropna(subset=['1M_25dP/25dC', '1M_25dC/ATM'])
-            fig.add_trace(
-                go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dP/25dC'], line=dict(color='lightgray'), name=f"{sel_ticker} 1M Skew - 25dP/25dC"), 
-                row=1, col=1
-            )
-            fig.add_trace(
-                go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dC/ATM'], line=dict(color='pink'), name=f"{sel_ticker} 1M Call Skew - 25dC/ATM"), 
-                row=2, col=1
-            )
+            
+            # 63 trading days represents a roughly 3-month rolling window
+            plot_df_1m['Skew_Rolling_80th'] = plot_df_1m['1M_25dP/25dC'].rolling(63).quantile(0.8)
+            plot_df_1m['Skew_Rolling_20th'] = plot_df_1m['1M_25dP/25dC'].rolling(63).quantile(0.2)
+            
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dP/25dC'], line=dict(color='lightgray'), name=f"{sel_ticker} 1M Skew - 25dP/25dC"), row=1, col=1)
+            
+            # Add rolling percentiles lines to establish cheap/rich bands
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Skew_Rolling_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)"), row=1, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Skew_Rolling_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)"), row=1, col=1)
+            
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dC/ATM'], line=dict(color='pink'), name=f"{sel_ticker} 1M Call Skew - 25dC/ATM"), row=2, col=1)
         
         if has_3m:
             plot_df_3m = hist_df.dropna(subset=['3M_25dP/25dC', '3M_25dC/ATM'])
-            fig.add_trace(
-                go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dP/25dC'], line=dict(color='gray', dash='dot'), name=f"{sel_ticker} 3M Skew - 25dP/25dC"), 
-                row=1, col=1
-            )
-            fig.add_trace(
-                go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dC/ATM'], line=dict(color='#8B0000', dash='dot'), name=f"{sel_ticker} 3M Call Skew - 25dC/ATM"), 
-                row=2, col=1
-            )
+            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dP/25dC'], line=dict(color='gray', dash='dot'), name=f"{sel_ticker} 3M Skew - 25dP/25dC"), row=1, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dC/ATM'], line=dict(color='#8B0000', dash='dot'), name=f"{sel_ticker} 3M Call Skew - 25dC/ATM"), row=2, col=1)
         else:
             st.info(f"ℹ️ **Note:** 3-Month options data is unavailable or insufficient for {sel_ticker} due to low chain liquidity. Displaying 1-Month data only.")
             
-        fig.update_layout(height=500, plot_bgcolor='white', font=dict(color='black'), showlegend=True)
-        
+        fig.update_layout(height=600, plot_bgcolor='white', font=dict(color='black'), showlegend=True)
         fig.update_xaxes(showgrid=True, gridcolor='#E5E7EB', tickformat="%b %Y", dtick="M1", zeroline=True, zerolinecolor='#9CA3AF')
         fig.update_yaxes(showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
         
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
     else:
         st.warning("No data found. Click 'Click to Refresh Data' in the sidebar.")

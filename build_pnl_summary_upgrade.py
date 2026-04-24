@@ -30,7 +30,7 @@ class VectorizedOptions:
         return K
 
 def calculate_cumulative(series, periods):
-    if len(series) < periods: return None
+    if series.empty: return None
     return (1 + series.tail(periods)).prod() - 1
 
 def calculate_sharpe(series):
