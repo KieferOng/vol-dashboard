@@ -666,7 +666,7 @@ elif page_selection == "Options Dashboard":
     if not hist_df.empty:
         fig = make_subplots(
             rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1,
-            subplot_titles=("Put Skew (25dP/25dC) - Downside Fear", "Call Skew (25dC/ATM) - Upside Greed")
+            subplot_titles=("Put/Call Skew (25dP/25dC)", "Call Skew (25dC/ATM)")
         )
         
         has_1m = '1M_25dP/25dC' in hist_df.columns and not hist_df['1M_25dP/25dC'].dropna().empty
@@ -681,22 +681,29 @@ elif page_selection == "Options Dashboard":
             plot_df_1m['Call_Skew_80th'] = plot_df_1m['1M_25dC/ATM'].rolling(63).quantile(0.8)
             plot_df_1m['Call_Skew_20th'] = plot_df_1m['1M_25dC/ATM'].rolling(63).quantile(0.2)
             
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dP/25dC'], line=dict(color='lightgray'), name=f"{sel_ticker} 1M Put Skew"), row=1, col=1)
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)"), row=1, col=1)
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)"), row=1, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dP/25dC'], line=dict(color='lightgray'), name=f"{sel_ticker} 1M Put Skew", legend="legend"), row=1, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)", legend="legend"), row=1, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)", legend="legend"), row=1, col=1)
             
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dC/ATM'], line=dict(color='pink'), name=f"{sel_ticker} 1M Call Skew"), row=2, col=1)
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)", showlegend=False), row=2, col=1)
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)", showlegend=False), row=2, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dC/ATM'], line=dict(color='pink'), name=f"{sel_ticker} 1M Call Skew", legend="legend2"), row=2, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)", legend="legend2"), row=2, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)", legend="legend2"), row=2, col=1)
         
         if has_3m:
             plot_df_3m = hist_df.dropna(subset=['3M_25dP/25dC', '3M_25dC/ATM'])
-            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dP/25dC'], line=dict(color='gray', dash='dot'), name=f"{sel_ticker} 3M Put Skew"), row=1, col=1)
-            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dC/ATM'], line=dict(color='#8B0000', dash='dot'), name=f"{sel_ticker} 3M Call Skew"), row=2, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dP/25dC'], line=dict(color='gray', dash='dot'), name=f"{sel_ticker} 3M Put Skew", legend="legend"), row=1, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dC/ATM'], line=dict(color='#8B0000', dash='dot'), name=f"{sel_ticker} 3M Call Skew", legend="legend2"), row=2, col=1)
         else:
             st.info(f"ℹ️ **Note:** 3-Month options data is unavailable or insufficient for {sel_ticker} due to low chain liquidity. Displaying 1-Month data only.")
             
-        fig.update_layout(height=700, plot_bgcolor='white', font=dict(color='black'), showlegend=True, hovermode="x unified")
+        fig.update_layout(
+            height=700, 
+            plot_bgcolor='white', 
+            font=dict(color='black'), 
+            hovermode="x unified",
+            legend=dict(y=1.0, yanchor="top", x=1.02, xanchor="left"),
+            legend2=dict(y=0.45, yanchor="top", x=1.02, xanchor="left")
+        )
         fig.update_xaxes(showgrid=True, gridcolor='#E5E7EB', tickformat="%b %Y", dtick="M1", zeroline=True, zerolinecolor='#9CA3AF')
         fig.update_yaxes(showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
         
