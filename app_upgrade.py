@@ -559,7 +559,9 @@ elif page_selection == "Options Dashboard":
             df_subset = df_subset[(df_subset['Payout Ratio'] <= 40.0) & (df_subset['Payout Ratio'] >= 1.0)]
             df_display = df_subset.sort_values(by="Payout Ratio", ascending=False).head(20)
             
-            # Shorthand columns to squish the table horizontally
+            # Format Expiration to MM-DD to save massive horizontal space
+            df_display['Expiration'] = pd.to_datetime(df_display['Expiration']).dt.strftime('%m-%d')
+            
             display_cols = ['Ticker', 'Expiration', 'Strike 1', 'Strike 2', 'S1 %spot', 'S2 %spot', 'Cost', 'Payout Ratio']
             df_display = df_display[display_cols].rename(columns={
                 'Expiration': 'Exp', 
@@ -620,7 +622,6 @@ elif page_selection == "Options Dashboard":
         def format_float(val):
             return f"{val:.1f}" if pd.notna(val) else ""
 
-        # FIX: Pulling the column names AFTER they were renamed in sharpe_df
         numeric_cum_cols = [c for c in cum_df.columns if c != 'Strategy']
         numeric_sharpe_cols = [c for c in sharpe_df.columns if c != 'Strategy']
 
@@ -628,19 +629,29 @@ elif page_selection == "Options Dashboard":
         
         with c_cum:
             st.markdown("**CUMULATIVE PNL**")
+            cum_style = cum_df.style.format({c: format_pct for c in numeric_cum_cols})
+            # Centering the gradient at 0 for every column individually
+            for col in numeric_cum_cols:
+                m = cum_df[col].abs().max()
+                if pd.isna(m) or m == 0: m = 1
+                cum_style = cum_style.background_gradient(subset=[col], cmap='RdYlGn', vmin=-m, vmax=m)
+                
             st.dataframe(
-                cum_df.style.format({c: format_pct for c in numeric_cum_cols})
-                .background_gradient(subset=numeric_cum_cols, cmap='RdYlGn')
-                .set_table_styles([{'selector': 'th', 'props': [('background-color', '#262730'), ('color', 'white')]}]),
+                cum_style.set_table_styles([{'selector': 'th', 'props': [('background-color', '#262730'), ('color', 'white')]}]),
                 hide_index=True, use_container_width=True
             )
             
         with c_sharpe:
             st.markdown("**SHARPE RATIO**")
+            sharpe_style = sharpe_df.style.format({c: format_float for c in numeric_sharpe_cols})
+            # Centering the gradient at 0 for every column individually
+            for col in numeric_sharpe_cols:
+                m = sharpe_df[col].abs().max()
+                if pd.isna(m) or m == 0: m = 1
+                sharpe_style = sharpe_style.background_gradient(subset=[col], cmap='RdYlGn', vmin=-m, vmax=m)
+                
             st.dataframe(
-                sharpe_df.style.format({c: format_float for c in numeric_sharpe_cols})
-                .background_gradient(subset=numeric_sharpe_cols, cmap='RdYlGn')
-                .set_table_styles([{'selector': 'th', 'props': [('background-color', '#262730'), ('color', 'white')]}]),
+                sharpe_style.set_table_styles([{'selector': 'th', 'props': [('background-color', '#262730'), ('color', 'white')]}]),
                 hide_index=True, use_container_width=True
             )
     else:
@@ -655,32 +666,43 @@ elif page_selection == "Options Dashboard":
     hist_df = load_history(sel_ticker)
     
     if not hist_df.empty:
-        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1)
+        fig = make_subplots(
+            rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1,
+            subplot_titles=("Put Skew (25dP/25dC) - Downside Fear", "Call Skew (25dC/ATM) - Upside Greed")
+        )
         
         has_1m = '1M_25dP/25dC' in hist_df.columns and not hist_df['1M_25dP/25dC'].dropna().empty
         has_3m = '3M_25dP/25dC' in hist_df.columns and not hist_df['3M_25dP/25dC'].dropna().empty
         
         if has_1m:
-            plot_df_1m = hist_df.dropna(subset=['1M_25dP/25dC', '1M_25dC/ATM'])
+            plot_df_1m = hist_df.dropna(subset=['1M_25dP/25dC', '1M_25dC/ATM']).copy()
             
-            plot_df_1m['Skew_Rolling_80th'] = plot_df_1m['1M_25dP/25dC'].rolling(63).quantile(0.8)
-            plot_df_1m['Skew_Rolling_20th'] = plot_df_1m['1M_25dP/25dC'].rolling(63).quantile(0.2)
+            # Put Skew 80/20 bands
+            plot_df_1m['Put_Skew_80th'] = plot_df_1m['1M_25dP/25dC'].rolling(63).quantile(0.8)
+            plot_df_1m['Put_Skew_20th'] = plot_df_1m['1M_25dP/25dC'].rolling(63).quantile(0.2)
             
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dP/25dC'], line=dict(color='lightgray'), name=f"{sel_ticker} 1M Skew - 25dP/25dC"), row=1, col=1)
+            # Call Skew 80/20 bands
+            plot_df_1m['Call_Skew_80th'] = plot_df_1m['1M_25dC/ATM'].rolling(63).quantile(0.8)
+            plot_df_1m['Call_Skew_20th'] = plot_df_1m['1M_25dC/ATM'].rolling(63).quantile(0.2)
             
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Skew_Rolling_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)"), row=1, col=1)
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Skew_Rolling_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)"), row=1, col=1)
+            # Top Chart Traces
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dP/25dC'], line=dict(color='lightgray'), name=f"{sel_ticker} 1M Put Skew"), row=1, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)"), row=1, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)"), row=1, col=1)
             
-            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dC/ATM'], line=dict(color='pink'), name=f"{sel_ticker} 1M Call Skew - 25dC/ATM"), row=2, col=1)
+            # Bottom Chart Traces
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dC/ATM'], line=dict(color='pink'), name=f"{sel_ticker} 1M Call Skew"), row=2, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)", showlegend=False), row=2, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)", showlegend=False), row=2, col=1)
         
         if has_3m:
             plot_df_3m = hist_df.dropna(subset=['3M_25dP/25dC', '3M_25dC/ATM'])
-            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dP/25dC'], line=dict(color='gray', dash='dot'), name=f"{sel_ticker} 3M Skew - 25dP/25dC"), row=1, col=1)
-            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dC/ATM'], line=dict(color='#8B0000', dash='dot'), name=f"{sel_ticker} 3M Call Skew - 25dC/ATM"), row=2, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dP/25dC'], line=dict(color='gray', dash='dot'), name=f"{sel_ticker} 3M Put Skew"), row=1, col=1)
+            fig.add_trace(go.Scatter(x=plot_df_3m.index, y=plot_df_3m['3M_25dC/ATM'], line=dict(color='#8B0000', dash='dot'), name=f"{sel_ticker} 3M Call Skew"), row=2, col=1)
         else:
             st.info(f"ℹ️ **Note:** 3-Month options data is unavailable or insufficient for {sel_ticker} due to low chain liquidity. Displaying 1-Month data only.")
             
-        fig.update_layout(height=600, plot_bgcolor='white', font=dict(color='black'), showlegend=True)
+        fig.update_layout(height=700, plot_bgcolor='white', font=dict(color='black'), showlegend=True, hovermode="x unified")
         fig.update_xaxes(showgrid=True, gridcolor='#E5E7EB', tickformat="%b %Y", dtick="M1", zeroline=True, zerolinecolor='#9CA3AF')
         fig.update_yaxes(showgrid=True, gridcolor='#E5E7EB', zeroline=True, zerolinecolor='#9CA3AF')
         
