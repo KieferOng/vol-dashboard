@@ -160,14 +160,15 @@ with st.sidebar:
         with st.expander("Charts Guide"):
             st.markdown("""
             **1. 1M Call / Put Monitor**
-            * **X:** A blended gauge of current market panic. It averages the 1M IV Percentile with the 1M IV/RV Ratio Percentile.
+            * **X:** Blended gauge of current market panic. It averages the 1M IV Percentile with the 1M IV/RV Ratio Percentile.
             * **Y:** 1M Call / Put Skew Percentile.
             * **Highlighted Zone:** Tickers above the 80th percentile in Skew, indicating historically expensive tail protection.
 
             **2. Selected Top Spreads 25D/10D**
             * Scans the live options chain every hour during market hours for ~1-month debit spreads (Buy 25-delta, Sell 10-delta).
             * **Cost:** Estimated net debit assuming worst case execution at ~25% worse than the mid-price.
-            * **Payout Ratio:** Maximum Potential Profit divided by Cost. Ratios are filtered between 1.0x and 40.0x.
+            * **Payout:** Maximum Potential Profit divided by Cost.
+            * Top 20 put / call spreads by Payout are displayed.
 
             **3. Summary of PnL for Daily Short Vol Strategies**
             * Simulates daily rolling of short option strategies.
@@ -175,8 +176,8 @@ with st.sidebar:
             * **Sharpe Ratio:** Annualised risk-adjusted return. *Note: 10-day and 20-day Sharpes may appear artificially inflated or deflated due to low short-term variance.*
 
             **4. Historical Percentiles: Skew / Vol**
-            * **Top Chart:** Displays the raw 25d Put / 25d Call ratio.
-            * **Bottom Chart:** Displays the raw 25d Call / ATM ratio.
+            * **Top Chart:** Displays Put / Call Skew (25dP/25dC).
+            * **Bottom Chart:** Displays Call Skew (25dC/ATM).
             * Overlays 1-Month (solid lines) and 3-Month (dotted lines) tenors to visualise term structure shifts.
             """)
 
@@ -666,13 +667,12 @@ elif page_selection == "Options Dashboard":
     if not hist_df.empty:
         fig = make_subplots(
             rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.1,
-            subplot_titles=("Put/Call Skew (25dP/25dC)", "Call Skew (25dC/ATM)")
+            subplot_titles=("Put / Call Skew (25dP/25dC)", "Call Skew (25dC/ATM)")
         )
         
         has_1m = '1M_25dP/25dC' in hist_df.columns and not hist_df['1M_25dP/25dC'].dropna().empty
         has_3m = '3M_25dP/25dC' in hist_df.columns and not hist_df['3M_25dP/25dC'].dropna().empty
         
-        # Calculate percentiles first so all variables are ready
         if has_1m:
             plot_df_1m = hist_df.dropna(subset=['1M_25dP/25dC', '1M_25dC/ATM']).copy()
             plot_df_1m['Put_Skew_80th'] = plot_df_1m['1M_25dP/25dC'].rolling(63).quantile(0.8)
@@ -683,7 +683,6 @@ elif page_selection == "Options Dashboard":
         if has_3m:
             plot_df_3m = hist_df.dropna(subset=['3M_25dP/25dC', '3M_25dC/ATM'])
 
-        # --- ROW 1 (Put Skew Traces in requested order) ---
         if has_1m:
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dP/25dC'], line=dict(color='lightgray'), name=f"{sel_ticker} 1M Put Skew", legend="legend"), row=1, col=1)
         if has_3m:
@@ -692,7 +691,6 @@ elif page_selection == "Options Dashboard":
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)", legend="legend"), row=1, col=1)
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Put_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)", legend="legend"), row=1, col=1)
 
-        # --- ROW 2 (Call Skew Traces in requested order) ---
         if has_1m:
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['1M_25dC/ATM'], line=dict(color='pink'), name=f"{sel_ticker} 1M Call Skew", legend="legend2"), row=2, col=1)
         if has_3m:
@@ -701,7 +699,6 @@ elif page_selection == "Options Dashboard":
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_80th'], line=dict(color='rgba(255, 0, 0, 0.5)', dash='dot'), name="80th %tile (3M Rolling)", legend="legend2"), row=2, col=1)
             fig.add_trace(go.Scatter(x=plot_df_1m.index, y=plot_df_1m['Call_Skew_20th'], line=dict(color='rgba(0, 255, 0, 0.5)', dash='dot'), name="20th %tile (3M Rolling)", legend="legend2"), row=2, col=1)
 
-        # Post-chart warnings
         if not has_3m and has_1m:
             st.info(f"ℹ️ **Note:** 3-Month options data is unavailable or insufficient for {sel_ticker} due to low chain liquidity. Displaying 1-Month data only.")
             
